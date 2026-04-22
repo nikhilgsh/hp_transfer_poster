@@ -88,7 +88,7 @@
 
       \vspace{0.4em}
       \begin{center}
-        \includegraphics[width=0.95\linewidth, height=18cm, keepaspectratio]{mu_transfer1.png}\\[0.3em]
+        \includegraphics[width=0.92\linewidth, height=14cm, keepaspectratio]{mu_transfer1.png}\\[0.3em]
         {\large\itshape Standard parameterization (left): the optimal HP \emph{shifts} with width. $\mu$P (right): the optimum is \emph{stable} --- so small-model tuning transfers.}
       \end{center}
 
@@ -114,20 +114,21 @@
           \textbf{\normalsize Transfer cost $c_n$}\\ {\footnotesize loss paid for using the wrong HP}
         \end{column}
         \begin{column}{0.245\linewidth}\centering
-          \begin{tikzpicture}[scale=1.3]
-            \draw[->, gray, thick] (-0.2,0) -- (5.2,0) node[right, black]{\small $\eta$};
-            \draw[->, gray, thick] (0,-0.2) -- (0,3.2) node[above, black]{\small $\phi$};
+          \resizebox{!}{11cm}{%
+          \begin{tikzpicture}
+            \draw[->, gray, thick] (-0.2,0) -- (5.2,0) node[right, black]{\Large $\eta$};
+            \draw[->, gray, thick] (0,-0.2) -- (0,3.4) node[above, black]{\Large $\phi$};
             \draw[ultra thick, tangocolorvectorblue, domain=0.4:4.6, smooth, variable=\x]
               plot ({\x}, {0.35*(\x - 2.5)*(\x - 2.5) + 0.35});
-            \filldraw[black] (2.5, 0.35) circle (3pt);
-            \node[below=3pt] at (2.5, 0.35) {\small $\eta^\star$};
-            \filldraw[black] (3.7, 0.85) circle (3pt);
+            \filldraw[black] (2.5, 0.35) circle (4pt);
+            \node[below=4pt] at (2.5, 0.35) {\large $\eta^\star$};
+            \filldraw[black] (3.7, 0.85) circle (4pt);
             \draw[<->, tangocolormediumscarletred, ultra thick] (2.5, -0.55) -- (3.7, -0.55);
-            \node[tangocolormediumscarletred, below] at (3.1, -0.55) {\small $\varepsilon$};
+            \node[tangocolormediumscarletred, below] at (3.1, -0.55) {\large $\varepsilon$};
             \draw[<->, tangocolormediumscarletred, ultra thick] (4.4, 0.35) -- (4.4, 0.85);
-            \node[tangocolormediumscarletred, right] at (4.4, 0.6) {\small $\propto \varepsilon^2$};
-          \end{tikzpicture}\\[0.2em]
-          \textbf{\normalsize Baseline}\\ {\footnotesize $b_n = \mathcal{O}(\sqrt{a_n})$ near a smooth min.}
+            \node[tangocolormediumscarletred, right] at (4.4, 0.6) {\large $\propto \varepsilon^2$};
+          \end{tikzpicture}}\\[0.2em]
+          \textbf{\normalsize Strongly-convex min}\\ {\footnotesize forces $b_n = \mathcal{O}(\sqrt{a_n})$}
         \end{column}
       \end{columns}
 
@@ -137,14 +138,14 @@
 
       \vspace{0.4em}
       \begin{center}
-        \bluebox{\parbox{0.95\linewidth}{\large \textbf{Useful-transfer theorem.} Let $a_n \sim n^{-\alpha}$, $b_n \sim n^{-\beta}$ near a smooth minimum. Then transferring HPs from width $n$ to $\infty$ is \emph{asymptotically cheaper} than tuning directly at width $n$ iff
+        \bluebox{\parbox{0.95\linewidth}{\large \textbf{Useful-transfer theorem.} Let $a_n \sim n^{-\alpha}$, $b_n \sim n^{-\beta}$ near a strongly-convex minimum. Then transferring HPs from width $n$ to $\infty$ is \emph{asymptotically cheaper} than tuning directly at width $n$ iff
         \[ \beta > \alpha/2, \qquad \text{equivalently} \qquad b_n = o(\sqrt{a_n}). \]
-        \textbf{Why:} near a smooth minimum the transfer cost scales as $c_n \propto b_n^2$, while direct tuning pays $\sim a_n$. So transfer wins exactly when $b_n^2 = o(a_n)$ --- \emph{the HP gap must shrink faster than $\sqrt{\text{loss gap}}$}.}}
+        \textbf{Why:} strong convexity forces the transfer cost $c_n \propto b_n^2$, while direct tuning pays $\sim a_n$. So transfer wins exactly when $b_n^2 = o(a_n)$ --- \emph{the HP gap must shrink faster than $\sqrt{\text{loss gap}}$}.}}
       \end{center}
 
       \vspace{0.3em}
       \begin{center}
-        \includegraphics[width=0.82\linewidth, height=11cm, keepaspectratio]{slow.png}\\[0.3em]
+        \includegraphics[width=0.88\linewidth, height=13cm, keepaspectratio]{slow.png}\\[0.3em]
         {\large\itshape Two-layer ReLU $+\ \mu$P: $b_n \propto n^{-0.39} \approx \sqrt{a_n}$ --- baseline \emph{exactly} achieved, so fast transfer is not universal under $\mu$P. It must come from additional structure.}
       \end{center}
 
