@@ -1,0 +1,178 @@
+
+
+%%% Math commands
+
+%% Math Stuff, Symbols
+% Probability
+\renewcommand{\P}{\mathbb{P}}
+% Expectation
+\newcommand{\E}{\mathbb{E}}
+% Variance
+\newcommand{\Var}{\text{Var}}
+% Covariance. 
+\newcommand{\Cov}{\text{Cov}}
+% Normal distribution. Example: $X_i \sim_{iid} \cN(0, 1)$. 
+\newcommand{\cN}{\mathcal{N}}
+
+%% Sets
+% Integers
+\newcommand{\Z}{\mathbb{Z}}
+% Reals
+\newcommand{\R}{\mathbb{R}}
+% Complex
+\newcommand{\C}{\mathbb{C}}
+% Natural
+\newcommand{\N}{\mathbb{N}}
+% Sphere. Example: $\S^{d-1}(\sqrt{d})$. 
+\renewcommand{\S}{\mathbb{S}}
+% Ball. Example: $\ball(0, 1)$. 
+\def\ball{{\mathsf B}}
+
+
+%% Math
+% Inner products
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+% Trace. Example: $\tr(\bA)$
+\newcommand{\tr}{\text{tr}}
+% Operator norm. Example: $\| \bA \|_{\op}$. 
+\newcommand{\op}{{\rm op}}
+% Indicator function. Example: $\ones\{ A > 1 \}$. 
+\newcommand{\ones}{\bm{1}}
+% Wide hat.
+\newcommand{\what}{\widehat}
+% Matrix transpose. Example: $\bA^\sT$. 
+\def\sT{{\mathsf T}}
+% Zero matrix. 
+\def\bzero{{\boldsymbol 0}}
+% Identically distributed as. Example: $X_i \simiid \cN(0, 1)$. 
+\def\simiid{\sim_{i.i.d.}}
+% sign
+\def\sign{{\rm sign}}
+% integral d: Example: $\int_\R f(x) \de x$. 
+\def\de{{\rm d}}
+% Uniform distribution. 
+\def\Unif{{\rm Unif}}
+
+
+% Variables
+\def\ba{{\boldsymbol a}}
+\def\boldb{{\boldsymbol b}}
+\def\bc{{\boldsymbol c}}
+\def\bd{{\boldsymbol d}}
+\def\be{{\boldsymbol e}}
+\def\boldf{{\boldsymbol f}}
+\def\bg{{\boldsymbol g}}
+\def\bh{{\boldsymbol h}}
+\def\bi{{\boldsymbol i}}
+\def\bj{{\boldsymbol j}}
+\def\bk{{\boldsymbol k}}
+\def\bl{{\boldsymbol l}}
+\def\boldm{{\boldsymbol m}}
+\def\bn{{\boldsymbol n}}
+\def\bo{{\boldsymbol o}}
+\def\bp{{\boldsymbol p}}
+\def\bq{{\boldsymbol q}}
+\def\br{{\boldsymbol r}}
+\def\bs{{\boldsymbol s}}
+\def\bt{{\boldsymbol t}}
+\def\bu{{\boldsymbol u}}
+\def\bv{{\boldsymbol v}}
+\def\bw{{\boldsymbol w}}
+\def\bx{{\boldsymbol x}}
+\def\by{{\boldsymbol y}}
+\def\bz{{\boldsymbol z}}
+\def\bA{{\boldsymbol A}}
+\def\bB{{\boldsymbol B}}
+\def\bC{{\boldsymbol C}}
+\def\bD{{\boldsymbol D}}
+\def\bE{{\boldsymbol E}}
+\def\bF{{\boldsymbol F}}
+\def\bG{{\boldsymbol G}}
+\def\bH{{\boldsymbol H}}
+\def\bI{{\boldsymbol I}}
+\def\bJ{{\boldsymbol J}}
+\def\bK{{\boldsymbol K}}
+\def\bL{{\boldsymbol L}}
+\def\bM{{\boldsymbol M}}
+\def\bN{{\boldsymbol N}}
+\def\bO{{\boldsymbol O}}
+\def\bP{{\boldsymbol P}}
+\def\bQ{{\boldsymbol Q}}
+\def\bR{{\boldsymbol R}}
+\def\bS{{\boldsymbol S}}
+\def\bT{{\boldsymbol T}}
+\def\bU{{\boldsymbol U}}
+\def\bV{{\boldsymbol V}}
+\def\bW{{\boldsymbol W}}
+\def\bX{{\boldsymbol X}}
+\def\bY{{\boldsymbol Y}}
+\def\bZ{{\boldsymbol Z}}
+
+\def\bsigma{{\boldsymbol \sigma}}
+\def\bphi{{\boldsymbol \phi}}
+\def\bpsi{{\boldsymbol \psi}}
+\def\blambda{{\boldsymbol \lambda}}
+\def\beps{{\boldsymbol \eps}}
+\def\bmu{{\boldsymbol \mu}}
+\def\bxi{{\boldsymbol \xi}}
+\def\btheta{{\boldsymbol \theta}}
+\def\bbeta{{\boldsymbol \beta}}
+\def\bgamma{{\boldsymbol \gamma}}
+\def\boldeta{{\boldsymbol \eta}}
+\def\bnu{{\boldsymbol \nu}}
+\def\bdelta{{\boldsymbol \deta}}
+
+\def\bTheta{{\boldsymbol \Theta}}
+\def\bSigma{{\boldsymbol \Sigma}}
+\def\bDelta{{\boldsymbol \Delta}}
+\def\bLambda{{\boldsymbol \Lambda}}
+\def\bPhi{{\boldsymbol \Phi}}
+\def\bPsi{{\boldsymbol \Psi}}
+\def\bXi{{\boldsymbol \Xi}}
+
+\def\cA{{\mathcal A}}
+\def\cB{{\mathcal B}}
+\def\cC{{\mathcal C}}
+\def\cD{{\mathcal D}}
+\def\cE{{\mathcal E}}
+\def\cF{{\mathcal F}}
+\def\cG{{\mathcal G}}
+\def\cH{{\mathcal H}}
+\def\cI{{\mathcal I}}
+\def\cJ{{\mathcal J}}
+\def\cK{{\mathcal K}}
+\def\cL{{\mathcal L}}
+\def\cM{{\mathcal M}}
+\def\cN{{\mathcal N}}
+\def\cO{{\mathcal O}}
+\def\cP{{\mathcal P}}
+\def\cQ{{\mathcal Q}}
+\def\cR{{\mathcal R}}
+\def\cS{{\mathcal S}}
+\def\cT{{\mathcal T}}
+\def\cU{{\mathcal U}}
+\def\cV{{\mathcal V}}
+\def\cW{{\mathcal W}}
+\def\cX{{\mathcal X}}
+\def\cY{{\mathcal Y}}
+\def\cZ{{\mathcal Z}}
+
+\newcommand{\eps}{\varepsilon} 
+\newcommand{\vphi}{\varphi}
+\def\id{{\mathbf I}}
+
+
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argsup}{arg\,sup}
+\DeclareMathOperator*{\arginf}{arg\,inf}
+
+\def\ddefloop#1{\ifx\ddefloop#1\else\ddef{#1}\expandafter\ddefloop\fi}
+
+%mathscr
+\def\ddef#1{\expandafter\def\csname s#1\endcsname{\ensuremath{\mathscr{#1}}}}
+\ddefloop ABCDEFGHIJKLMNOPQRSTUVWXYZ\ddefloop
+
+\newtheorem*{remark*}{Remark}

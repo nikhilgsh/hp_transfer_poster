@@ -1,0 +1,917 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\title{One-Step Full-Batch Gradient Descent Scaling in a Tied-Embedding Toy Transformer with Zipf Data}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Model and data}
+
+Let the vocabulary size be $V$ and hidden width be $n$.
+Let $E\in\mathbb{R}^{n\times V}$ be an embedding matrix (tied for input and output)
+and $W\in\mathbb{R}^{n\times n}$ be a hidden linear map.
+For a token $t\in\{1,\dots,V\}$ with one-hot vector $e_t\in\mathbb{R}^{V}$, define
+\[
+x^{(t)} := E e_t\in\mathbb{R}^n,\qquad
+h^{(t)} := W x^{(t)}\in\mathbb{R}^n,\qquad
+z^{(t)} := \frac{1}{n}E^\top h^{(t)}\in\mathbb{R}^V.
+\]
+The prediction is $p^{(t)} := \mathrm{softmax}(z^{(t)})$ and the per-example loss is the cross-entropy
+\[
+\ell^{(t)} := -\log p^{(t)}_t.
+\]
+
+\paragraph{Initialization.}
+Assume iid Gaussian initialization
+\[
+W_{ij}\sim \mathcal{N}\!\left(0,\frac{1}{n}\right)\quad \text{iid},\qquad
+E_{ik}\sim \mathcal{N}(0,1)\quad \text{iid},
+\]
+with $W$ independent of $E$.
+
+\paragraph{Data distribution (Zipf).}
+Assume full-batch (population) gradient descent under a token distribution
+$q=(q_1,\dots,q_V)$, where $t\sim q$ and the label is $y=t$.
+For Zipf with exponent $s>0$ (tokens ranked in decreasing frequency),
+\[
+q_k = \frac{k^{-s}}{H_{V,s}},\qquad H_{V,s}:=\sum_{r=1}^V r^{-s}.
+\]
+The population loss is
+\[
+\mathcal{L} := \mathbb{E}_{t\sim q}\big[\ell^{(t)}\big] = \sum_{t=1}^V q_t\,\ell^{(t)}.
+\]
+
+\section{Forward-pass scales at initialization}
+
+\subsection{Embedding coordinates}
+For fixed $t$, the embedding vector is the $t$-th column of $E$:
+\[
+x^{(t)}_i = E_{it}\sim \mathcal{N}(0,1)\quad \text{exactly},
+\]
+so $\|x^{(t)}\|^2=\sum_{i=1}^n (x^{(t)}_i)^2\sim \chi^2_n$ and therefore
+\[
+\frac{1}{n}\|x^{(t)}\|^2 \to 1 \quad \text{in probability as } n\to\infty.
+\]
+
+\subsection{Hidden coordinates}
+Condition on $x^{(t)}$. Each row of $W$ is independent of $x^{(t)}$, hence for each $i$,
+\[
+h^{(t)}_i = \sum_{j=1}^n W_{ij}x^{(t)}_j \,\Big|\, x^{(t)}
+\sim \mathcal{N}\!\left(0,\frac{1}{n}\|x^{(t)}\|^2\right),
+\]
+and $\{h^{(t)}_i\}_{i=1}^n$ are conditionally iid. In particular, since $\|x^{(t)}\|^2/n\to 1$,
+each coordinate $h^{(t)}_i$ is $\Theta(1)$ and $\|h^{(t)}\|^2=\Theta(n)$ with high probability (w.h.p.).
+
+\subsection{Logits}
+For $k\neq t$, conditional on $h^{(t)}$ the column $E_{\cdot k}$ is independent of $h^{(t)}$, so
+\[
+z^{(t)}_k = \frac{1}{n}\sum_{i=1}^n E_{ik}h^{(t)}_i \,\Big|\, h^{(t)}
+\sim \mathcal{N}\!\left(0,\frac{1}{n^2}\|h^{(t)}\|^2\right).
+\]
+Since $\|h^{(t)}\|^2=\Theta(n)$, it follows that
+\[
+z^{(t)}_k = \Theta\!\left(\frac{1}{\sqrt{n}}\right)\quad \text{w.h.p. for each fixed }k\neq t.
+\]
+For $k=t$ (tied column), $z^{(t)}_t = \frac{1}{n}(x^{(t)})^\top W x^{(t)}$ is also
+$\Theta(n^{-1/2})$ w.h.p. (as a Gaussian quadratic form conditional on $x^{(t)}$).
+
+Thus all logits are near $0$ at init, with typical coordinate size $\Theta(n^{-1/2})$, regardless of $V$.
+
+\section{Cross-entropy logit gradients and the effect of large $V$}
+
+For an example $t$, the logit-gradient is
+\[
+g^{(t)} := \nabla_{z^{(t)}}\ell^{(t)} = p^{(t)} - e_t.
+\]
+Since $z^{(t)}=\Theta(n^{-1/2})$ at init, $p^{(t)}$ is near-uniform:
+\[
+p^{(t)}_k = \frac{1}{V} + o(1)\quad \text{(for each fixed }k\text{)},
+\]
+hence to leading order
+\[
+g^{(t)} \approx u - e_t,\qquad u:=\frac{1}{V}\mathbf{1}.
+\]
+In particular,
+\[
+g^{(t)}_t \approx -1,\qquad g^{(t)}_{k\neq t}\approx \frac{1}{V}.
+\]
+Although most coordinates are $\Theta(1/V)$, the $\ell_2$ norm remains constant-order:
+\[
+\|g^{(t)}\|_2^2 = (1-p^{(t)}_t)^2 + \sum_{k\neq t} (p^{(t)}_k)^2 = \Theta(1).
+\]
+
+\paragraph{Full-batch (population) average.}
+Define the average logit-gradient under $t\sim q$:
+\[
+\bar g := \mathbb{E}_{t\sim q}[g^{(t)}] = \sum_{t=1}^V q_t g^{(t)}.
+\]
+Using $g^{(t)}\approx u-e_t$ gives
+\[
+\bar g \approx \sum_{t=1}^V q_t(u-e_t) = u-q,
+\]
+so coordinatewise
+\[
+\bar g_k \approx \frac{1}{V} - q_k.
+\]
+Under Zipf, $q_k = k^{-s}/H_{V,s}$, this exhibits a head/tail split:
+if $q_k\gg 1/V$, then $\bar g_k\approx -q_k$; if $q_k\ll 1/V$, then $\bar g_k\approx 1/V$.
+
+The rank cutoff $k_\star$ such that $q_{k_\star}\asymp 1/V$ satisfies
+\[
+\frac{k_\star^{-s}}{H_{V,s}} \asymp \frac{1}{V}
+\quad \Longrightarrow \quad
+k_\star \asymp \left(\frac{V}{H_{V,s}}\right)^{1/s}.
+\]
+For $s>1$, $H_{V,s}\to \zeta(s)$ so $k_\star=\Theta(V^{1/s})$; for $s=1$, $H_{V,1}\sim \log V$ so
+$k_\star=\Theta(V/\log V)$.
+
+\section{Backpropagation for one example}
+
+For a fixed example $t$, define
+\[
+\delta_h^{(t)} := \nabla_{h^{(t)}}\ell^{(t)},\qquad
+\delta_x^{(t)} := \nabla_{x^{(t)}}\ell^{(t)}.
+\]
+Using $z^{(t)}=\frac{1}{n}E^\top h^{(t)}$ and $h^{(t)}=Wx^{(t)}$,
+\[
+\delta_h^{(t)} = \frac{1}{n}E g^{(t)},\qquad
+\delta_x^{(t)} = W^\top \delta_h^{(t)}.
+\]
+At init, since $\|g^{(t)}\|_2=\Theta(1)$, each coordinate of $\delta_h^{(t)}$ has typical size $\Theta(1/n)$,
+and each coordinate of $\delta_x^{(t)}$ also has typical size $\Theta(1/n)$.
+
+\section{Full-batch gradients and one GD step}
+
+Population gradients:
+\[
+\nabla_W \mathcal{L} = \sum_{r=1}^V q_r\,\delta_h^{(r)} (x^{(r)})^\top,
+\]
+\[
+\nabla_E \mathcal{L} = \sum_{r=1}^V q_r\left(\delta_x^{(r)} e_r^\top + \frac{1}{n}h^{(r)} (g^{(r)})^\top\right).
+\]
+Take one full-batch GD step with group learning rates $\eta_W,\eta_E$:
+\[
+\Delta W := W^+ - W = -\eta_W \nabla_W\mathcal{L},\qquad
+\Delta E := E^+ - E = -\eta_E \nabla_E\mathcal{L}.
+\]
+
+\subsection{Induced updates in activations (first order)}
+For a fixed token $t$, define updated activations using $(W^+,E^+)$:
+\[
+x^{(t)+} := E^+ e_t,\qquad h^{(t)+}:=W^+ x^{(t)+},\qquad z^{(t)+} := \frac{1}{n}(E^+)^\top h^{(t)+}.
+\]
+To first order in $(\eta_W,\eta_E)$ (dropping terms quadratic in step sizes),
+\[
+\Delta x^{(t)} := x^{(t)+}-x^{(t)} = (\Delta E)e_t,
+\]
+\[
+\Delta h^{(t)} := h^{(t)+}-h^{(t)} \approx (\Delta W)x^{(t)} + W(\Delta x^{(t)}),
+\]
+\[
+\Delta z^{(t)} := z^{(t)+}-z^{(t)} \approx \frac{1}{n}\Big((\Delta E)^\top h^{(t)} + E^\top \Delta h^{(t)}\Big).
+\]
+
+\section{Where Zipf enters: per-token magnitude of full-batch updates}
+
+Because the population gradients are weighted by $q_r$, the leading contribution to the update experienced
+by token $t$ is proportional to $q_t$ (the frequency of $t$ under $q$). At init, the relevant
+per-coordinate backprop signals satisfy $\delta_h^{(t)}=\Theta(1/n)$ and $\delta_x^{(t)}=\Theta(1/n)$,
+hence the typical per-coordinate update magnitudes obey the following scaling laws:
+
+\subsection{Embedding update magnitude}
+The input-side part of $\nabla_E\mathcal{L}$ contributes to column $t$ in proportion to $q_t$,
+yielding
+\[
+\Delta x^{(t)} = (\Delta E)e_t \quad \Longrightarrow \quad
+|\Delta x^{(t)}_i| = \Theta\!\left(\eta_E \frac{q_t}{n}\right).
+\]
+Under Zipf, $q_t = t^{-s}/H_{V,s}$, so
+\[
+|\Delta x^{(t)}_i| = \Theta\!\left(\eta_E \frac{1}{n}\frac{t^{-s}}{H_{V,s}}\right).
+\]
+
+\subsection{Hidden update magnitude}
+Using $\Delta h^{(t)}\approx (\Delta W)x^{(t)} + W\Delta x^{(t)}$ and the rank-1 structure
+$\nabla_W \ell^{(t)}=\delta_h^{(t)}(x^{(t)})^\top$, the dominant \emph{self} contribution to $(\Delta W)x^{(t)}$
+scales like $\eta_W q_t$ per coordinate at init, while $W\Delta x^{(t)}$ contributes at most on the order of
+$\eta_E q_t/n$ per coordinate. Thus
+\[
+|\Delta h^{(t)}_i| = \Theta(\eta_W q_t) + \Theta\!\left(\eta_E \frac{q_t}{n}\right),
+\]
+and typically the $\Theta(\eta_W q_t)$ term dominates unless $\eta_E\gg n\eta_W$.
+
+Under Zipf,
+\[
+|\Delta h^{(t)}_i| = \Theta\!\left(\eta_W \frac{t^{-s}}{H_{V,s}}\right)
+\quad \text{(dominant term)}.
+\]
+
+\subsection{Logit update magnitude and the $V$ vs $\sqrt{n}$ regime split}
+
+A key object is the Gram matrix $G:=E^\top E\in\mathbb{R}^{V\times V}$.
+At init, for $j\neq k$ one has $G_{jk}=\sum_{i=1}^n E_{ij}E_{ik}=\Theta_p(\sqrt{n})$,
+so $(1/n)G_{jk}=\Theta_p(1/\sqrt{n})$, while $(1/n)G_{kk}\approx 1$.
+
+The dominant self contribution to $\Delta z^{(t)}$ is proportional to
+\[
+q_t\left(\frac{1}{n}E^\top E\right)g^{(t)}.
+\]
+Since $g^{(t)}\approx u-e_t$, the label coordinate satisfies
+\[
+\left[\left(\frac{1}{n}E^\top E\right)g^{(t)}\right]_t = -1 + O_p\!\left(\frac{1}{\sqrt{n}}\right),
+\]
+whereas for a non-label coordinate $j\neq t$ one gets
+\[
+\left[\left(\frac{1}{n}E^\top E\right)g^{(t)}\right]_j
+= \frac{1}{V} + \Theta_p\!\left(\frac{1}{\sqrt{n}}\right).
+\]
+Therefore the non-label behavior has two regimes:
+\[
+\frac{1}{V} \gg \frac{1}{\sqrt{n}} \ \ (V\ll \sqrt{n})\quad \Longrightarrow\quad
+\text{non-label scale } \Theta(1/V),
+\]
+\[
+\frac{1}{\sqrt{n}} \gg \frac{1}{V} \ \ (V\gg \sqrt{n})\quad \Longrightarrow\quad
+\text{non-label scale } \Theta(1/\sqrt{n}).
+\]
+
+Combining with the full-batch frequency factor $q_t$ and the effective prefactor
+$\eta_W+\eta_E/n$ that appears in the induced logit change, one obtains
+\[
+|\Delta z^{(t)}_t|
+= \Theta\!\Big(\big(\eta_W+\eta_E/n\big)\,q_t\Big),
+\]
+\[
+|\Delta z^{(t)}_j| \ (j\neq t)
+= \Theta\!\Big(\big(\eta_W+\eta_E/n\big)\,q_t\cdot \max\{1/V,\ 1/\sqrt{n}\}\Big).
+\]
+Under Zipf $q_t=t^{-s}/H_{V,s}$, these become
+\[
+|\Delta z^{(t)}_t|
+= \Theta\!\Big(\big(\eta_W+\eta_E/n\big)\frac{t^{-s}}{H_{V,s}}\Big),
+\]
+\[
+|\Delta z^{(t)}_j| \ (j\neq t)
+= \Theta\!\Big(\big(\eta_W+\eta_E/n\big)\frac{t^{-s}}{H_{V,s}}\cdot \max\{1/V,\ 1/\sqrt{n}\}\Big).
+\]
+
+\section{Learning-rate normalization choices under Zipf}
+
+Because $q_t$ varies widely, no single global learning rate can make one-step updates
+$\Theta(1)$ simultaneously for all token ranks $t$. Two natural normalizations are:
+
+\subsection{Head-token normalization ($t=1$)}
+Since $q_1 = 1/H_{V,s}$, achieving $\Theta(1)$ updates for the most frequent token suggests
+\[
+\eta_W = \Theta(H_{V,s}),\qquad \eta_E = \Theta(n H_{V,s}),
+\]
+which for $s>1$ implies $\eta_W=\Theta(1)$, $\eta_E=\Theta(n)$, while for $s=1$ implies
+$\eta_W=\Theta(\log V)$, $\eta_E=\Theta(n\log V)$.
+
+\subsection{Typical-draw normalization ($t\sim q$)}
+A frequency scale for a random draw is $\mathbb{E}_{t\sim q}[q_t]=\sum_{k=1}^V q_k^2=\|q\|_2^2$.
+Under Zipf,
+\[
+\|q\|_2^2 = \frac{H_{V,2s}}{H_{V,s}^2}.
+\]
+To keep typical per-token updates $\Theta(1)$ in expectation over $t\sim q$, one would scale
+\[
+\eta_W = \Theta\!\left(\frac{1}{\|q\|_2^2}\right)=\Theta\!\left(\frac{H_{V,s}^2}{H_{V,2s}}\right),
+\qquad
+\eta_E = \Theta\!\left(\frac{n}{\|q\|_2^2}\right)=\Theta\!\left(n\frac{H_{V,s}^2}{H_{V,2s}}\right).
+\]
+For $s=1$, $H_{V,1}\sim \log V$ and $H_{V,2}\to \zeta(2)$, hence
+\[
+\eta_W=\Theta((\log V)^2),\qquad \eta_E=\Theta(n(\log V)^2).
+\]
+For $s>1$, $H_{V,s},H_{V,2s}$ converge, yielding again $\eta_W=\Theta(1)$, $\eta_E=\Theta(n)$.
+
+\section{Summary}
+
+At initialization, $x^{(t)}_i=\Theta(1)$, $h^{(t)}_i=\Theta(1)$, and $z^{(t)}_k=\Theta(n^{-1/2})$ w.h.p.
+independent of $V$.
+
+Under full-batch GD with Zipf token frequencies, one-step update magnitudes for a rank-$t$ token
+scale proportionally to $q_t=t^{-s}/H_{V,s}$:
+\[
+|\Delta x^{(t)}_i|=\Theta\!\left(\eta_E \frac{q_t}{n}\right),\qquad
+|\Delta h^{(t)}_i|=\Theta(\eta_W q_t)\ \text{(dominant)},
+\]
+\[
+|\Delta z^{(t)}_t|=\Theta\!\Big((\eta_W+\eta_E/n)q_t\Big),
+\]
+and for non-label logits $j\neq t$ there is a regime split in the tied model:
+\[
+|\Delta z^{(t)}_j|=\Theta\!\Big((\eta_W+\eta_E/n)q_t\cdot \max\{1/V,\ 1/\sqrt{n}\}\Big).
+\]
+Thus when $V\gg \sqrt{n}$, non-label coordinate changes are typically governed by the
+Gram off-diagonal scale $\Theta(1/\sqrt{n})$ rather than $1/V$.
+
+\section{Goal and scope}
+
+We study the \emph{one-step} optimal learning rate $\eta^\star(\beta,n)$ for two update rules:
+(i) SGD and (ii) Muon (polar update), in a softmax model whose representation covariance $\Sigma_x$ has a small-eigenvalue tail.
+The batch size scales as $B=\beta n$ and the vocabulary as $V=\alpha n^\gamma$.
+Our main target is the \emph{width dependence} (as $n\to\infty$ with $\beta$ fixed) of the batch effect on $\eta^\star$.
+
+The key technical issue is that the softmax loss is not quadratic. We give a self-contained derivation showing:
+\begin{itemize}
+\item under mild, checkable conditions the softmax one-step line search is governed (for \emph{scaling}) by a local quadratic surrogate,
+\item in the coupled scaling $B=\beta n$ the SGD optimal step depends only on \emph{positive moments} of $\Sigma_x$,
+\item whereas the Muon optimal step exhibits dependence on \emph{inverse-tail} quantities (e.g.\ $\tfrac1n\mathrm{Tr}(\Sigma_x^{-2})$) when the geometry is not in a special commuting case.
+\end{itemize}
+
+\section{Softmax model (with tied embeddings) and stochastic batches}
+
+\subsection{Dimensions and scalings}
+Let hidden width be $n$ and vocabulary size be $V=\alpha n^\gamma$ with constants $\alpha>0$ and $\gamma>0$.
+Let batch size be $B=\beta n$ with $\beta\ge 1$.
+
+\subsection{Representation distribution}
+We model the pooled representation $x\in\mathbb{R}^n$ by a Gaussian ansatz
+\[
+x \sim \mathcal{N}(0,\Sigma_x),
+\qquad \Sigma_x\succeq 0,
+\]
+where $\Sigma_x=\Sigma_x^{(n)}$ may depend on $n$ and has a lower spectral tail (specified later).
+A batch $\{x_b\}_{b=1}^B$ yields the sample covariance
+\[
+S := \frac{1}{B}\sum_{b=1}^B x_b x_b^\top.
+\]
+
+\subsection{Parameters and logits}
+Let $E\in\mathbb{R}^{n\times V}$ be a tied embedding matrix with iid Gaussian columns:
+\[
+E_{\cdot k}\sim \mathcal{N}(0,I_n)\ \text{iid across }k,
+\]
+independent of the batch.
+We train a weight matrix $W\in\mathbb{R}^{n\times n}$ (we can imagine an operating point $\bar W$).
+Given $x$, define logits
+\[
+z(W;x) := \frac{1}{n}E^\top W x \in \mathbb{R}^V,
+\qquad
+p(W;x) := \mathrm{softmax}(z(W;x)).
+\]
+
+\subsection{Labels and loss}
+For a class label $t\in\{1,\dots,V\}$, we use \emph{label smoothing} with parameter $\varepsilon\in[0,1)$:
+\[
+y(t) := (1-\varepsilon)e_t + \varepsilon u,
+\qquad
+u:=\frac{1}{V}\mathbf{1}.
+\]
+The per-example loss is cross-entropy
+\[
+\ell(z,t):= -\sum_{k=1}^V y_k(t)\log p_k(z).
+\]
+Let $t$ be drawn from some distribution (e.g.\ Zipf); the batch sensitivity results below do not rely on the exact law of $t$
+beyond mild non-saturation conditions at the operating point.
+
+\section{One-step line search and the softmax Taylor expansion}
+
+Fix an \emph{operating point} $\bar W$ and a \emph{batch-dependent update direction} $U_B$ (to be defined for SGD/Muon).
+Consider the one-dimensional function
+\[
+f_B(\eta) := \mathbb{E}_{(x,t)}\big[\ell(z(\bar W-\eta U_B;x),t)\big],
+\]
+and define the one-step optimal learning rate
+\[
+\eta_B^\star := \arg\min_{\eta\ge 0} f_B(\eta).
+\]
+
+\subsection{Softmax derivatives in logit space}
+Let $p=\mathrm{softmax}(z)$. Then
+\[
+g(z,t):=\nabla_z \ell(z,t)=p-y(t),
+\qquad
+H(z):=\nabla_z^2 \ell(z,t)=\mathrm{diag}(p)-pp^\top,
+\]
+where $H(z)$ is independent of $t$.
+
+A basic global bound is $\|H(z)\|_{\mathrm{op}}\le \tfrac14$ for all $z$.
+
+\subsection{Logit direction induced by a parameter direction}
+Define the logit direction induced by $U_B$ as
+\[
+\Delta z(x) := \frac{1}{n}E^\top U_B x,
+\qquad
+z_\eta(x) := z(\bar W;x) - \eta\,\Delta z(x).
+\]
+Then $f_B'(\eta)= -\mathbb{E}\big[g(z_\eta,t)^\top \Delta z\big]$ and
+\[
+f_B''(\eta)= \mathbb{E}\big[\Delta z^\top H(z_\eta)\Delta z\big].
+\]
+
+\subsection{Second-order expansion and the cubic remainder}
+Taylor expand $f_B$ at $\eta=0$:
+\[
+f_B(\eta)= f_B(0) - a_B \eta + \frac12 b_B \eta^2 + R_B(\eta),
+\]
+where
+\[
+a_B := -f_B'(0)=\mathbb{E}\big[g(z_0,t)^\top \Delta z\big],
+\qquad
+b_B := f_B''(0)=\mathbb{E}\big[\Delta z^\top H(z_0)\Delta z\big],
+\quad z_0(x):=z(\bar W;x).
+\]
+
+A standard Taylor theorem bound expresses $R_B'(\eta)$ in terms of the third derivative of $\ell$ along the line.
+For softmax cross-entropy, third derivatives w.r.t.\ logits are uniformly bounded in magnitude by an absolute constant,
+hence there exists $C>0$ such that for all $\eta$ in any interval where the path stays non-saturated,
+\begin{equation}
+\label{eq:Rprime}
+|R_B'(\eta)| \le C\,|\eta|^2\,\mathbb{E}\|\Delta z(x)\|_3^3,
+\qquad
+\|\Delta z\|_3^3:=\sum_{k=1}^V|\Delta z_k|^3.
+\end{equation}
+
+\section{Key lemma: $\mathbb{E}\|\Delta z\|_3^3$ scales like $\alpha n^{\gamma-3/2}$}
+
+This is the quantitative ingredient that makes the softmax non-quadratic remainder negligible for $\gamma<3/2$,
+including the main case $V\propto n$ ($\gamma=1$).
+
+\subsection{A mild step-direction boundedness condition}
+We assume the update direction is \emph{operator-norm bounded}:
+\begin{equation}
+\label{eq:UbBound}
+\|U_B\|_{\mathrm{op}} = O(1)
+\quad\text{uniformly in }n.
+\end{equation}
+This is the natural ``$\Theta(1)$ function-space step'' regime: combined with the $1/n$ factor in logits and $\|x\|=\Theta(\sqrt n)$,
+it keeps each logit step coordinate at scale $n^{-1/2}$.
+
+We also assume $\mathrm{Tr}(\Sigma_x)=\Theta(n)$, which holds in typical pooling/topic models.
+
+\subsection{Coordinate scaling}
+Condition on $(U_B,x)$. Since $E_{\cdot k}\sim\mathcal{N}(0,I_n)$ is independent of $(U_B,x)$,
+\[
+\Delta z_k \mid (U_B,x)\sim \mathcal{N}\!\left(0,\frac{1}{n^2}\|U_B x\|^2\right).
+\]
+Under \eqref{eq:UbBound} and $\mathbb{E}\|x\|^2=\mathrm{Tr}(\Sigma_x)=\Theta(n)$,
+we have $\|U_B x\|^2\le \|U_B\|_{\mathrm{op}}^2\|x\|^2=O(n)$ and thus
+\[
+\mathbb{E}|\Delta z_k|^3 = \Theta(n^{-3/2}).
+\]
+Summing over $V=\alpha n^\gamma$ coordinates yields
+\begin{equation}
+\label{eq:l3scale}
+\mathbb{E}\|\Delta z\|_3^3
+=
+\sum_{k=1}^V \mathbb{E}|\Delta z_k|^3
+=
+\Theta\!\left(\alpha\,n^{\gamma-3/2}\right).
+\end{equation}
+
+\subsection{Consequence for the softmax remainder}
+Combining \eqref{eq:Rprime} and \eqref{eq:l3scale}, for $\gamma<3/2$ and $|\eta|=O(1)$ we obtain
+\[
+|R_B'(\eta)| = O\!\left(|\eta|^2\,\alpha\,n^{\gamma-3/2}\right)=o_n(1).
+\]
+In particular for $\gamma=1$, $|R_B'(\eta)|=O(\alpha n^{-1/2})$.
+
+\section{From softmax to a quadratic surrogate with batch covariance $S$}
+
+The second-order term $b_B$ admits an explicit quadratic form in $U_B$.
+
+\subsection{Softmax-induced left factor $M$}
+Let $\bar H:=\mathbb{E}[H(z_0(x))]$ (population-averaged logit Hessian at $\bar W$).
+Define
+\[
+M := \frac{1}{n^2}E\,\bar H\,E^\top \in\mathbb{R}^{n\times n}.
+\]
+Then
+\[
+b_B = \mathbb{E}\big[\Delta z^\top H(z_0)\Delta z\big]
+\approx \mathbb{E}\big[\Delta z^\top \bar H \Delta z\big]
+= \mathbb{E}\big[x^\top U_B^\top M U_B x\big]
+= \mathrm{Tr}\!\big(U_B^\top M U_B\,\Sigma_x\big),
+\]
+and on a batch, $\Sigma_x$ is replaced by $S$.
+
+\subsection{The symmetry-breaking condition}
+At strict symmetric initialization, $p\approx u$ implies $H$ is permutation-symmetric and $M\approx cI$, which kills the
+non-commuting geometry needed for Muon sensitivity to small eigenvalues.
+We therefore assume:
+\begin{equation}
+\label{eq:MnotI}
+M \not\propto I
+\quad\text{(equivalently $\bar H$ is not permutation-symmetric).}
+\end{equation}
+A simple way to motivate \eqref{eq:MnotI} without ``running training'' is to take $\bar W=W_0+\epsilon W_1$ with small $\epsilon$
+and data-correlated $W_1$, so that predictions are slightly non-uniform and $\bar H$ is not symmetric across classes.
+
+\subsection{Quadratic proxy for one-step scaling}
+Under non-saturation and $\gamma<3/2$, the remainder derivative is $o_n(1)$ for $|\eta|=O(1)$, hence
+the location of the minimizer (for scaling with $n$) is governed by the quadratic approximation
+\[
+f_B(\eta) \approx f_B(0) - a_B \eta + \frac12 b_B \eta^2,
+\qquad \eta^\star_{B,\mathrm{quad}}=\frac{a_B}{b_B}.
+\]
+Non-quadratic softmax effects shift $\eta^\star$ by at most $O(\alpha n^{\gamma-3/2})$ under mild convexity along the line,
+and therefore cannot create $\log n$ or power-law divergences when $\gamma=1$.
+
+From this point onward, batch dependence enters \emph{only} through the random covariance $S$,
+matching the quadratic/Wishart setup.
+
+\section{Quadratic/Wishart setup for optimizer comparison (SGD vs Muon)}
+
+To isolate the optimizer effect, consider the canonical quadratic objective in an ``error'' variable $E\in\mathbb{R}^{n\times n}$:
+\[
+L(E)=\frac12\|E\|_F^2.
+\]
+Given a batch covariance $S$, the minibatch gradient is
+\[
+g(E;S)=ES.
+\]
+This is the same algebraic structure as the softmax local quadratic term once we absorb left factors (e.g.\ $M^{1/2}$)
+into the definition of the error coordinates. The spectrum and tail behavior enter through $S$ (hence $\Sigma_x$).
+
+Let $A:=E^\top E\succeq 0$.
+
+\subsection{SGD: exact one-step optimal learning rate}
+SGD update: $E^+=E-\eta ES$.
+A direct expansion gives
+\[
+L(E^+)=\frac12\mathrm{Tr}(A) - \eta\,\mathrm{Tr}(AS) + \frac{\eta^2}{2}\mathrm{Tr}(SAS).
+\]
+Thus the (conditional) one-step optimal learning rate is
+\[
+\eta_{\mathrm{opt}}^{\mathrm{SGD}}(E,S)=\frac{\mathrm{Tr}(AS)}{\mathrm{Tr}(SAS)}.
+\]
+Taking expectation over $S$ and using the Wishart moment identity for Gaussian $x$ yields
+\[
+\mathbb{E}[\mathrm{Tr}(SAS)]
+=
+\mathrm{Tr}(\Sigma_x A \Sigma_x)
++
+\frac{1}{B}
+\Big(
+\mathrm{Tr}(\Sigma_x)\mathrm{Tr}(A\Sigma_x)
++\mathrm{Tr}(A\Sigma_x^2)
+\Big).
+\]
+With $B=\beta n$, the correction scales like $1/\beta$ times \emph{positive} spectral moments of $\Sigma_x$.
+In particular small eigenvalues of $\Sigma_x$ do not cause divergences in these terms.
+
+\subsection{Muon: exact one-step optimal learning rate and inverse-tail sensitivity}
+Muon update:
+\[
+Q=\mathrm{polar}(ES),
+\qquad
+E^+=E-\eta Q.
+\]
+Because $Q$ has orthonormal columns on the range of $ES$, one obtains the exact conditional optimizer
+\[
+\eta_{\mathrm{opt}}^{\mathrm{Muon}}(E,S)
+=\frac{1}{n}\mathrm{Tr}(E^\top Q)
+=\frac{1}{n}\mathrm{Tr}\!\left(S^{-1}(SAS)^{1/2}\right).
+\]
+Unlike SGD, this depends on $S$ through a \emph{matrix inverse} and a \emph{square root}, which makes it sensitive to
+eigenvector perturbations of $S$ and, in generic non-commuting cases, to inverse-tail functionals.
+
+A standard perturbative expansion of the polar/square-root functional around $\Sigma_x$ yields, for large $B$,
+\[
+\eta_{\mathrm{opt}}^{\mathrm{Muon}}(\beta,n)
+=
+\eta_\infty^{\mathrm{Muon}} - \frac{1}{\beta}\,C(A,\Sigma_x) + o(1/\beta),
+\]
+where $\eta_\infty^{\mathrm{Muon}}=\tfrac{1}{n}\mathrm{Tr}\big(\Sigma_x^{-1}(\Sigma_x A \Sigma_x)^{1/2}\big)$ and
+$C(A,\Sigma_x)$ is an eigenvector-perturbation coefficient.
+A representative form (in the eigenbasis of $\Sigma_x$) is
+\[
+C(A,\Sigma_x)\ \approx\ \frac{1}{n}\sum_{i\ne j}\frac{\lambda_i\lambda_j}{(\lambda_i-\lambda_j)^2}\big(\sqrt{a_i}-\sqrt{a_j}\big)^2,
+\]
+where $\{\lambda_i\}$ are eigenvalues of $\Sigma_x$ and $\{a_i\}$ are eigenvalues of the teacher-induced matrix in that basis
+(in commuting cases, the numerator vanishes and $C=0$).
+
+\paragraph{Generic non-commuting scaling.}
+In generic non-commuting situations (no shared eigenbasis and no special cancellations), the dominant scaling is controlled by inverse-tail quantities,
+schematically
+\[
+C(A,\Sigma_x)\ \asymp\ \kappa(A,\text{noncomm})\cdot \frac{1}{n}\mathrm{Tr}(\Sigma_x^{-2}),
+\]
+where $\kappa(A,\text{noncomm})$ measures the strength of non-commutativity (and $\kappa=0$ in special commuting/spherical cases).
+This is the mechanism by which Muon becomes sensitive to small eigenvalues of $\Sigma_x$.
+
+\section{Width scaling with $B=\beta n$ under a power-law lower tail}
+
+Assume the eigenvalues of $\Sigma_x=\Sigma_x^{(n)}$ satisfy a power-law to zero:
+\[
+\lambda_i(\Sigma_x)\asymp (i/n)^\alpha,\qquad i=1,\dots,n,
+\]
+so $\lambda_{\min}\asymp n^{-\alpha}$.
+Then inverse moments scale as
+\[
+\frac{1}{n}\mathrm{Tr}(\Sigma_x^{-2})
+\sim
+\begin{cases}
+O(1), & \alpha<\tfrac12,\\[4pt]
+\Theta(\log n), & \alpha=\tfrac12,\\[4pt]
+\Theta(n^{2\alpha-1}), & \alpha>\tfrac12.
+\end{cases}
+\]
+Therefore, in the coupled regime $B=\beta n$, the Muon one-step optimizer exhibits a width-dependent batch effect
+\[
+\eta_{\mathrm{opt}}^{\mathrm{Muon}}(\beta,n)
+=
+\eta_\infty^{\mathrm{Muon}}
+-
+\frac{\kappa}{\beta}\times
+\begin{cases}
+O(1),\\
+\Theta(\log n),\\
+\Theta(n^{2\alpha-1}),
+\end{cases}
+\]
+while the SGD optimizer depends on $\Sigma_x$ only through positive moments and has no analogous inverse-tail divergence.
+
+\section{Putting it back into the softmax model}
+
+Under the softmax-to-quadratic reduction:
+\begin{itemize}
+\item $\Sigma_x$ is the covariance of pooled representations, which can naturally have a power-law lower tail (e.g.\ from topic mixtures and pooling).
+\item The softmax-induced left factor is $M=\tfrac1{n^2}E\bar H E^\top$; to avoid the symmetric special case, assume $M\not\propto I$.
+\item For $V=\alpha n^\gamma$ with $\gamma<3/2$ (in particular $\gamma=1$), the softmax non-quadratic remainder along one step obeys
+$|R_B'(\eta)|=O(\alpha n^{\gamma-3/2})$, hence it cannot produce the $\log n$ or power-law width dependence that arises from inverse-tail
+effects of $\Sigma_x$ in the Muon polar map.
+\end{itemize}
+
+\paragraph{Interpretation.}
+In the width--batch coupled scaling $B=\beta n$, finite-batch randomness persists at the level of eigen-structure of $S$,
+and Muon couples to this through polar/square-root operations that are amplified by small eigenvalues unless the geometry is in a commuting/spherical special case.
+SGD couples only through polynomial (positive-moment) functionals of $S$ and remains stable to lower-tail behavior.
+
+\section{Summary of assumptions (minimal for the scaling conclusions)}
+\begin{enumerate}
+\item $V=\alpha n^\gamma$ with $\gamma<3/2$ (main case $\gamma=1$), and $B=\beta n$ with $\beta\ge 1$.
+\item $x\sim\mathcal N(0,\Sigma_x^{(n)})$ with $\mathrm{Tr}(\Sigma_x)=\Theta(n)$ and a specified lower spectral tail.
+\item Update directions satisfy $\|U_B\|_{\mathrm{op}}=O(1)$ so per-coordinate logit steps are $O(n^{-1/2})$.
+\item Non-saturation along the relevant $\eta$ range (helped by label smoothing $\varepsilon>0$), so $f_B''$ stays $\Theta(1)$ in the normalized regime.
+\item Symmetry breaking at the operating point: $M=\tfrac1{n^2}E\bar H E^\top \not\propto I$.
+\item Generic non-commuting geometry for Muon to exhibit inverse-tail scaling; commuting/spherical cases yield $\kappa=0$ and suppress the effect.
+\end{enumerate}
+
+
+\section{Setup}
+
+Let $x \sim \mathcal{N}(0,\Sigma)$ with $\Sigma \succeq 0$.
+Let the batch size be $B = c n$ with $c \ge 1$.
+Define the sample covariance
+\[
+S = \frac{1}{B} \sum_{b=1}^B x_b x_b^\top.
+\]
+
+We study the quadratic objective
+\[
+L(E) = \frac{1}{2}\|E\|_F^2,
+\qquad E = W - W_\star,
+\]
+so the minibatch gradient is
+\[
+g = ES.
+\]
+
+We analyze the \emph{first optimization step} and compute the one-step optimal
+learning rate for both SGD and Muon.
+
+\section{SGD: Exact First-Step Optimal Learning Rate}
+
+SGD update:
+\[
+E^+ = E - \eta ES.
+\]
+
+Let $A = E^\top E$. Then
+\[
+L(E^+) = \frac{1}{2} \mathrm{Tr}(A)
+- \eta \mathrm{Tr}(AS)
++ \frac{\eta^2}{2} \mathrm{Tr}(SAS).
+\]
+
+Taking expectation over the batch,
+\[
+\eta_{\mathrm{opt}}^{\mathrm{SGD}}(E)
+= \frac{\mathrm{Tr}(A\Sigma)}
+{\mathbb{E}[\mathrm{Tr}(SAS)]}.
+\]
+
+For Gaussian data,
+\[
+\mathbb{E}[\mathrm{Tr}(SAS)]
+=
+\mathrm{Tr}(\Sigma A \Sigma)
++
+\frac{1}{B}
+\left(
+\mathrm{Tr}(\Sigma)\mathrm{Tr}(A\Sigma)
++
+\mathrm{Tr}(A\Sigma^2)
+\right).
+\]
+
+Thus, with $B=cn$,
+\[
+\eta_\infty^{\mathrm{SGD}}(c)
+=
+\frac{\mathrm{Tr}(A\Sigma)}
+{\mathrm{Tr}(\Sigma A \Sigma)}
+\left(
+1
+-
+\frac{1}{c}
+\frac{
+\mathrm{Tr}(\Sigma)\mathrm{Tr}(A\Sigma)
++
+\mathrm{Tr}(A\Sigma^2)
+}
+{\mathrm{Tr}(\Sigma A \Sigma)}
++ O(c^{-2})
+\right).
+\]
+
+\subsection*{Key Observation}
+
+The $1/c$ correction depends only on \emph{positive moments}
+of $\Sigma$ (e.g.\ $\mathrm{Tr}(\Sigma)$ and $\mathrm{Tr}(\Sigma^2)$).
+A lower spectral tail near $0$ does not produce divergences.
+
+\section{Muon: Exact First-Step Optimal Learning Rate}
+
+Muon update:
+\[
+Q = \mathrm{polar}(ES),
+\qquad
+E^+ = E - \eta Q.
+\]
+
+The one-step optimal learning rate is
+\[
+\eta_{\mathrm{opt}}^{\mathrm{Muon}}(E,S)
+=
+\frac{1}{n}
+\mathrm{Tr}
+\left(
+E^\top \mathrm{polar}(ES)
+\right).
+\]
+
+Equivalently,
+\[
+\eta_{\mathrm{opt}}^{\mathrm{Muon}}(E,S)
+=
+\frac{1}{n}
+\mathrm{Tr}
+\left(
+S^{-1}(SAS)^{1/2}
+\right).
+\]
+
+For large $c$,
+\[
+\eta_\infty^{\mathrm{Muon}}(c)
+=
+\eta_\infty^{\mathrm{Muon}}(\infty)
+-
+\frac{C(A,\Sigma)}{c}
++ o(c^{-1}),
+\]
+where
+\[
+\eta_\infty^{\mathrm{Muon}}(\infty)
+=
+\frac{1}{n}
+\mathrm{Tr}
+\left(
+\Sigma^{-1}
+(\Sigma A \Sigma)^{1/2}
+\right).
+\]
+
+\section{Power-Law Spectrum Extending to Zero}
+
+Assume the eigenvalues of $\Sigma$ satisfy
+\[
+\lambda_i(\Sigma) \asymp (i/n)^\alpha,
+\qquad i=1,\dots,n,
+\]
+so $\lambda_{\min} \asymp n^{-\alpha}$.
+
+Inverse moments scale as
+\[
+\frac{1}{n}\mathrm{Tr}(\Sigma^{-2})
+\sim
+\begin{cases}
+O(1), & \alpha < \tfrac12,\\
+\Theta(\log n), & \alpha = \tfrac12,\\
+\Theta(n^{2\alpha-1}), & \alpha > \tfrac12.
+\end{cases}
+\]
+
+\section{Teacher Structure Cases}
+
+Let $A = E_0^\top E_0$ be determined by the teacher.
+
+\subsection*{Case A: Spherical Teacher}
+
+If $A = \alpha I$, then
+\[
+(SAS)^{1/2} = \sqrt{\alpha}\, S,
+\qquad
+S^{-1}(SAS)^{1/2} = \sqrt{\alpha}\, I.
+\]
+
+Therefore,
+\[
+\eta_{\mathrm{opt}}^{\mathrm{Muon}} = \sqrt{\alpha},
+\]
+independent of $c$ and $\Sigma$.
+Thus
+\[
+C(A,\Sigma) = 0.
+\]
+
+\subsection*{Case B: Teacher Aligned with $\Sigma$}
+
+Let $A = \mathrm{diag}(a_i)$ in the eigenbasis of $\Sigma$.
+Then for large $c$,
+\[
+\eta_\infty^{\mathrm{Muon}}(\infty)
+=
+\frac{1}{n}\sum_{i=1}^n \sqrt{a_i}.
+\]
+
+The correction coefficient behaves like
+\[
+C(A,\Sigma)
+\approx
+\frac{1}{n}
+\sum_{i \ne j}
+\frac{\lambda_i \lambda_j}{(\lambda_i - \lambda_j)^2}
+\big(\sqrt{a_i} - \sqrt{a_j}\big)^2.
+\]
+
+\subsection*{Smooth Teacher Spectrum}
+
+If $\sqrt{a_i} = f(\lambda_i)$ with $f$ Lipschitz near $0$,
+then
+\[
+C(A,\Sigma)
+\sim
+\frac{1}{n}
+\sum_i
+\lambda_i^2 f'(\lambda_i)^2,
+\]
+which remains finite under mild regularity.
+
+\subsection*{Tail-Amplifying Teacher}
+
+If $\sqrt{a_i} = \lambda_i^{-\beta}$,
+then
+\[
+C(A,\Sigma)
+\propto
+\int_0
+\lambda^{1/\alpha - 1 - 2\beta}
+\, d\lambda,
+\]
+which diverges when
+\[
+\beta \ge \frac{1}{2\alpha}.
+\]
+
+\subsection*{Generic Non-Aligned Teacher}
+
+If $A$ does not commute with $\Sigma$,
+\[
+C(A,\Sigma)
+\sim
+(\text{non-commutativity of }A\text{ and }\Sigma)
+\times
+\frac{1}{n}\mathrm{Tr}(\Sigma^{-2}).
+\]
+
+Thus for $\alpha \ge \tfrac12$,
+\[
+C(A,\Sigma)
+=
+\begin{cases}
+O(1), & \alpha < \tfrac12,\\
+O(\log n), & \alpha = \tfrac12,\\
+O(n^{2\alpha-1}), & \alpha > \tfrac12.
+\end{cases}
+\]
+
+\section{Conclusion}
+
+\begin{itemize}
+\item SGD batch corrections depend only on positive moments of $\Sigma$ and remain stable under heavy lower spectral tails.
+\item Muon batch corrections depend on eigenvector perturbations and inverse-tail quantities such as $\mathrm{Tr}(\Sigma^{-2})$.
+\item For power-law spectra extending to zero, Muon becomes increasingly sensitive to tail behavior unless the teacher induces commuting/spherical structure.
+\end{itemize}
+
+\end{document}

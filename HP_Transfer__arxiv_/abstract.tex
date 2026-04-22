@@ -1,0 +1,8 @@
+\begin{abstract}
+The growing scale of deep learning models has rendered standard hyperparameter (HP) optimization prohibitively expensive. A promising solution is the use of scale-aware hyperparameters, which can enable direct \emph{transfer} of optimal HPs from small-scale grid searches to large models with minimal performance loss. To understand the principles 
+governing such transfer strategy, we develop a general conceptual framework for reasoning about HP transfer across scale, characterizing transfer as \emph{fast} when the suboptimality it induces vanishes asymptotically faster 
+than the finite-scale performance gap. We show formally that fast transfer is equivalent to \emph{useful} transfer for compute-optimal grid search, meaning that transfer is asymptotically more compute-efficient than direct tuning. 
+While empirical work has found that the Maximal Update Parameterization ($\mu$P) exhibits fast transfer when scaling model width, the mechanisms remain poorly understood. We show that this property depends critically on problem structure by presenting synthetic settings where transfer either offers provable computational advantage or fails to outperform direct tuning even under $\mu$P. To explain the fast transfer observed in practice, we conjecture that decomposing the optimization trajectory reveals two contributions to loss reduction: (1) a width-stable component that determines the optimal HPs and (2) a width-sensitive component that improves with width but weakly perturbs the HP optimum. We present empirical evidence for this hypothesis across various settings, including large language model pretraining.
+\end{abstract}
+
+

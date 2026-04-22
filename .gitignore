@@ -1,0 +1,32 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.lof
+*.lot
+*.idx
+*.ilg
+*.ind
+*.run.xml
+*-blx.bib
+*.bcf
+*.dvi
+*.xdv
+
+# macOS / editor cruft
+.DS_Store
+*.swp
+*~
+
+# Build dirs
+build/
+out/

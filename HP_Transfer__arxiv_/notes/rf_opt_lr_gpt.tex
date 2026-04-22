@@ -1,0 +1,1203 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\title{Optimal Constant Step Size for Population GD in Gaussian-Sketched Random Features\\
+via Weighted Spectral Regularity on Relevant Scales\\
+\small (with curvature at the optimum)}
+\author{}
+\date{}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{assumption}{Assumption}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\begin{document}
+\maketitle
+
+\paragraph{Scope (what is proved vs.\ what is imported).}
+The deterministic core of this note is fully self-contained at the level of
+\emph{finite-dimensional} quadratic objectives: for any SPD $H\in\mathbb R^{d\times d}$,
+any $b\in\mathbb R^d$, and any horizon $T\in\mathbb N$, we have an exact spectral
+representation of $L_T(\eta;H,b)$ and its derivatives.
+
+The asymptotic expansions in Section~\ref{sec:det} are \emph{conditional} on a
+$b$-weighted spectral regularity assumption on the window $\mu\sim 1/T$
+(Assumption~\ref{ass:wRV}), and should be interpreted \emph{uniformly along a family of
+finite-dimensional instances} $(H_N,b_N)$ with horizons $T=T(N)\to\infty$ (e.g.\ the RF
+setting with $d=N$). In particular, for a single fixed matrix $H$ in fixed dimension,
+Assumption~\ref{ass:wRV} can only hold up to horizons $T\lesssim 1/\mu_d(H)$
+(see Remark~\ref{rem:finite-d}).
+
+A second (and independent) uniformity issue concerns the contribution of the
+``head'' modes $\{\mu_j>\mu_{\mathrm{cut}}\}$: for a fixed $H$ this head is exponentially
+small in $T$, but to obtain \emph{uniform} asymptotics along $(H_N,b_N)$ one needs a
+uniform control on the top edge of the spectrum. In the Gaussian RF model this is
+provided by a population eigengap $\lambda_1>\lambda_2$ and operator-norm concentration
+(Section~\ref{sec:rf}).
+
+\begin{itemize}[leftmargin=*]
+\item[(D1)] Under the $b$-weighted spectral regularity assumption on scales $\mu\sim 1/T$
+and a mild uniform top-edge separation condition (automatic in the RF model),
+we prove a deterministic step-size minimizer expansion for constant-step population GD
+on a quadratic objective (Theorem~\ref{thm:det}).
+\item[(D2)] Under the same assumptions, we prove a deterministic \emph{curvature-at-the-optimum}
+result (Theorem~\ref{thm:det-curv}), showing $L_T''(\eta_T^\star)>0$ and giving sharp
+two-sided scaling for $L_T''(\eta_T^\star)$ in terms of the weighted spectral exponent.
+\end{itemize}
+
+For the Gaussian random-features (RF) model, we assume standard \emph{capacity} and
+\emph{source} conditions on the population covariance operator $\Sigma$ and target
+$\bar w$, and we appeal to deterministic-equivalent / local-law results to justify the
+RF weighted spectral regularity assumption on the scale $\mu\sim 1/T$.
+
+\begin{remark}[Finite dimension vs.\ asymptotics in the deterministic core]
+Throughout Section~\ref{sec:det}, all identities and derivative manipulations are
+carried out for finite-dimensional SPD matrices $H\in\mathbb R^{d\times d}$. However,
+the asymptotic statements in Theorems~\ref{thm:det} and~\ref{thm:det-curv} are intended
+to be applied along sequences of finite-dimensional instances $(H_N,b_N)$ with horizons
+$T=T(N)\to\infty$ for which the weighted spectral regularity window
+$\mu\in[1/T,\mu_{\mathrm{cut}}]$ remains above the spectral floor.
+This is exactly the RF regime where $d=N\to\infty$ and $T\asymp N^\alpha$.
+\end{remark}
+
+% ------------------------------------------------------------------
+\section{Deterministic population GD and a weighted spectral viewpoint}
+\label{sec:det}
+
+\subsection{Quadratic setup and exact loss representation}
+
+Let $H\in\mathbb R^{d\times d}$ be symmetric positive definite (SPD). Assume $H$ has
+orthonormal eigenvectors $\{v_j\}_{j=1}^d$ with eigenvalues
+\[
+\mu_1>\mu_2\ge \mu_3\ge \cdots \ge \mu_d>0.
+\]
+Fix $b\in\mathbb R^d$ and consider the quadratic objective
+\[
+\mathcal L(v):=\tfrac12\langle v,Hv\rangle-\langle b,v\rangle+\mathrm{const}.
+\]
+The unique minimizer is $v^\star=H^{-1}b$. Run population gradient descent with
+constant step size $\eta>0$ and initialization $v^{(0)}=0$:
+\[
+v^{(t+1)}=v^{(t)}-\eta(Hv^{(t)}-b),\qquad t=0,1,2,\dots
+\]
+Let $e^{(t)}:=v^{(t)}-v^\star$. Then
+\[
+e^{(t)}=(I-\eta H)^t e^{(0)},\qquad e^{(0)}=-v^\star.
+\]
+Write $b_j:=\langle b,v_j\rangle$. Since $Hv^\star=b$, we have
+$\mu_j\langle v^\star,v_j\rangle=b_j$, hence $\langle v^\star,v_j\rangle=b_j/\mu_j$.
+Therefore the excess loss after $T$ steps is
+\begin{equation}\label{eq:LT}
+L_T(\eta;H,b):=\mathcal L(v^{(T)})-\mathcal L(v^\star)
+=\tfrac12\sum_{j=1}^d\frac{b_j^2}{\mu_j}\,(1-\eta\mu_j)^{2T}.
+\end{equation}
+Since $d<\infty$, $L_T$ is a polynomial in $\eta$ and thus $C^\infty$. Differentiating
+term-by-term yields
+\begin{align}
+L_T'(\eta;H,b)
+&=-T\sum_{j=1}^d b_j^2(1-\eta\mu_j)^{2T-1},
+\label{eq:LTprime}\\
+L_T''(\eta;H,b)
+&=
+T(2T-1)\sum_{j=1}^d b_j^2\,\mu_j\,(1-\eta\mu_j)^{2T-2}.
+\label{eq:LTsecond}
+\end{align}
+
+\begin{lemma}[Convexity in $\eta$]\label{lem:convex}
+For every $T\ge 1$, $L_T''(\eta)\ge 0$ for all $\eta\in\mathbb R$. Hence $L_T$ is convex
+on $\mathbb R$, and any interior stationary point is a global minimizer.
+\end{lemma}
+
+\begin{proof}
+In \eqref{eq:LTsecond}, the exponent $2T-2$ is even and $\mu_j>0$, so each summand is
+nonnegative.
+\end{proof}
+
+\begin{assumption}[Top-mode nondegeneracy]\label{ass:top}
+$b_1=\langle b,v_1\rangle\neq 0$.
+\end{assumption}
+
+\begin{lemma}[Strict convexity on $(1/\mu_1,2/\mu_1)$]\label{lem:strict-convex}
+Assume Assumption~\ref{ass:top} and $T\ge 2$. Then $L_T''(\eta)>0$ for every
+$\eta\in(1/\mu_1,2/\mu_1)$, and in particular the minimizer $\eta_T^\star$ defined below
+is unique.
+\end{lemma}
+
+\begin{proof}
+For $\eta\neq 1/\mu_1$, the $j=1$ summand in \eqref{eq:LTsecond} equals
+$T(2T-1)b_1^2\mu_1(1-\eta\mu_1)^{2T-2}>0$ since $b_1\neq 0$ and the exponent is even.
+\end{proof}
+
+% ------------------------------------------------------------------
+\subsection{Weighted spectral CDF and the relevant scale $\mu\sim 1/T$}
+
+Fix a cutoff $\mu_{\mathrm{cut}}\in(0,\mu_1/4]$ and define the $b$-weighted spectral
+measure away from the top mode on $(0,\mu_{\mathrm{cut}}]$:
+\[
+\nu_b:=\sum_{\substack{2\le j\le d:\\ \mu_j\le \mu_{\mathrm{cut}}}} b_j^2\,\delta_{\mu_j},
+\qquad
+F_b(x):=\nu_b([0,x])=\sum_{\substack{2\le j\le d:\\ \mu_j\le \min\{x,\mu_{\mathrm{cut}}\}}} b_j^2.
+\]
+We assume a power law \emph{only for this weighted CDF} on the relevant window
+$[1/T,\mu_{\mathrm{cut}}]$.
+
+\begin{assumption}[Weighted regular variation on relevant scales]\label{ass:wRV}
+Fix $\theta>0$ and $\mu_{\mathrm{cut}}\in(0,\mu_1/4]$. There exist constants
+$c_F,C_F>0$ and $T_0\ge 1$ such that for all $T\ge T_0$,
+\begin{equation}\label{eq:wRV}
+c_F x^{\theta+1}\le F_b(x)\le C_F x^{\theta+1}
+\qquad \forall x\in[1/T,\mu_{\mathrm{cut}}].
+\end{equation}
+\end{assumption}
+
+\begin{remark}[Finite dimension and the lower end of the window]\label{rem:finite-d}
+In fixed finite dimension, $F_b(x)=0$ for $x<\mu_d$ and \eqref{eq:wRV} cannot hold down to
+$x\downarrow 0$. The intended regime is that $T$ does not exceed a constant multiple of
+$1/\mu_d$ so that $1/T\gtrsim \mu_d$ and the window $[1/T,\mu_{\mathrm{cut}}]$ lies above the
+spectral floor. This matches RF regimes with $\mu_{\min}(H_N)\asymp N^{-\alpha}$ and
+$T\lesssim N^\alpha$.
+\end{remark}
+
+\begin{assumption}[Uniform top-edge separation (for uniform-in-family bounds)]\label{ass:gap}
+There exists $\varepsilon_{\mathrm{gap}}\in(0,1)$ such that
+\[
+\mu_2 \le (1-\varepsilon_{\mathrm{gap}})\,\mu_1.
+\]
+\end{assumption}
+
+% ------------------------------------------------------------------
+\subsection{From $S_T(\eta)$ to a Laplace transform}
+
+Split \eqref{eq:LTprime} into: top mode ($j=1$), tail ($\mu_j\le \mu_{\mathrm{cut}}$),
+and head ($\mu_j>\mu_{\mathrm{cut}}$, excluding $j=1$):
+\[
+L_T'(\eta)=
+\underbrace{-T b_1^2(1-\eta\mu_1)^{2T-1}}_{\text{top}}
+\;-\;T S_T(\eta)\;-\;T H_T(\eta),
+\]
+where
+\[
+S_T(\eta):=\sum_{\substack{2\le j\le d:\\ \mu_j\le\mu_{\mathrm{cut}}}}
+b_j^2(1-\eta\mu_j)^{2T-1},
+\qquad
+H_T(\eta):=\sum_{\substack{2\le j\le d:\\ \mu_j>\mu_{\mathrm{cut}}}}
+b_j^2(1-\eta\mu_j)^{2T-1}.
+\]
+
+Define the Laplace transform of $F_b$:
+\[
+\mathcal L_{F_b}(s):=\int_{[0,\mu_{\mathrm{cut}}]}e^{-s\mu}\,dF_b(\mu)
+=\sum_{\substack{2\le j\le d:\\ \mu_j\le\mu_{\mathrm{cut}}}} b_j^2 e^{-s\mu_j}.
+\]
+
+\begin{lemma}[Elementary exponential comparison]\label{lem:exp-comp}
+For $x\in[0,1/2]$,
+\[
+e^{-x-x^2}\le 1-x\le e^{-x}.
+\]
+Consequently, if $\eta\mu\le 1/2$ then for all integers $T\ge 1$,
+\[
+e^{-4\eta T\mu}\ \le\ (1-\eta\mu)^{2T-1}\ \le\ e^{-\eta T\mu}.
+\]
+Moreover, if $\eta\mu\le 1/2$ and $T\ge 2$, then
+\[
+e^{-4\eta T\mu}\ \le\ (1-\eta\mu)^{2T-2}\ \le\ e^{-\eta T\mu}.
+\]
+\end{lemma}
+
+\begin{proof}
+The bounds $1-x\le e^{-x}$ and $\log(1-x)\ge -x-x^2$ for $x\in[0,1/2]$ are standard.
+For the $(2T-1)$ upper bound: $(1-x)^{2T-1}\le e^{-(2T-1)x}\le e^{-Tx}$ since $2T-1\ge T$.
+For the $(2T-2)$ upper bound: $(1-x)^{2T-2}\le e^{-(2T-2)x}\le e^{-Tx}$ since $2T-2\ge T$ for $T\ge 2$.
+
+For the lower bound, using $\log(1-x)\ge -x-x^2$ and $x^2\le x$ on $[0,1/2]$,
+\[
+(2T-1)\log(1-x)\ge -(2T-1)(x+x^2)\ge -2T(x+x^2)\ge -4Tx,
+\]
+and similarly with $2T-2$ in place of $2T-1$. Exponentiate and set $x=\eta\mu$.
+\end{proof}
+
+Let
+\[
+\eta_0:=\frac{2}{\mu_1}-\frac{1}{4\mu_1}=\frac{7}{4\mu_1},
+\qquad
+I:=[\eta_0,2/\mu_1].
+\]
+Then for any $\eta\in I$ and any $\mu\le\mu_{\mathrm{cut}}\le\mu_1/4$,
+we have $\eta\mu\le (2/\mu_1)(\mu_1/4)=1/2$, so Lemma~\ref{lem:exp-comp} applies.
+
+\begin{lemma}[Laplace bounds from weighted CDF on relevant scales]\label{lem:laplace}
+Assume Assumption~\ref{ass:wRV}. Then there exist constants $c_L,C_L>0$ and $T_1\ge T_0$
+(depending only on $\mu_1,\mu_{\mathrm{cut}},\theta,c_F,C_F$) such that for all
+$T\ge T_1$ and all $s\in[c_1 T,c_2 T]$ with
+\[
+c_1:=\eta_0,\qquad c_2:=\frac{8}{\mu_1},
+\]
+we have
+\[
+c_L s^{-(\theta+1)}\le \mathcal L_{F_b}(s)\le C_L s^{-(\theta+1)}.
+\]
+\end{lemma}
+
+\begin{proof}
+Split
+\[
+\mathcal L_{F_b}(s)
+=\int_{[0,1/T]}e^{-s\mu}\,dF_b(\mu)+\int_{(1/T,\mu_{\mathrm{cut}}]}e^{-s\mu}\,dF_b(\mu).
+\]
+
+\emph{Upper bound.}
+For the first term, $e^{-s\mu}\le 1$ and $F_b$ is nondecreasing, so
+\[
+\int_{[0,1/T]}e^{-s\mu}\,dF_b(\mu)\le F_b(1/T)\le C_F (1/T)^{\theta+1}.
+\]
+
+For the second term, use Stieltjes integration by parts with $f(\mu)=e^{-s\mu}$:
+\[
+\int_{(1/T,\mu_{\mathrm{cut}}]} e^{-s\mu}\,dF_b(\mu)
+=
+e^{-s\mu_{\mathrm{cut}}}F_b(\mu_{\mathrm{cut}})
+-e^{-s/T}F_b(1/T)
++s\int_{1/T}^{\mu_{\mathrm{cut}}} e^{-s\mu}F_b(\mu)\,d\mu.
+\]
+Dropping the negative boundary term $-e^{-s/T}F_b(1/T)$ and using
+$F_b(\mu)\le C_F\mu^{\theta+1}$ on $[1/T,\mu_{\mathrm{cut}}]$ yields
+\[
+\int_{(1/T,\mu_{\mathrm{cut}}]} e^{-s\mu}\,dF_b(\mu)
+\le
+e^{-s\mu_{\mathrm{cut}}}F_b(\mu_{\mathrm{cut}})
++s C_F\int_{1/T}^{\mu_{\mathrm{cut}}} e^{-s\mu}\mu^{\theta+1}\,d\mu.
+\]
+With $t=s\mu$, the integral term is
+\[
+sC_F\int_{1/T}^{\mu_{\mathrm{cut}}} e^{-s\mu}\mu^{\theta+1}\,d\mu
+=
+C_F s^{-(\theta+1)}\int_{s/T}^{s\mu_{\mathrm{cut}}} e^{-t}t^{\theta+1}\,dt
+\le C'_F s^{-(\theta+1)}.
+\]
+For the boundary term, since $s\ge c_1T$ on $[c_1T,c_2T]$,
+\[
+e^{-s\mu_{\mathrm{cut}}}F_b(\mu_{\mathrm{cut}})
+\le
+F_b(\mu_{\mathrm{cut}})\,e^{-c_1\mu_{\mathrm{cut}}T}
+=O(e^{-cT}),
+\]
+which is eventually dominated by any polynomial rate in $T$ and in particular by
+$s^{-(\theta+1)}$ on $s\asymp T$.
+Together with $F_b(1/T)\le C_FT^{-(\theta+1)}\asymp s^{-(\theta+1)}$, this yields the upper bound.
+
+\medskip
+\emph{Lower bound.}
+For $s\in[c_1T,c_2T]$ and $\mu\in[0,1/T]$, we have
+$s\mu\le c_2T\cdot \frac1T = 8/\mu_1$, hence $e^{-s\mu}\ge e^{-8/\mu_1}$. Therefore
+\[
+\mathcal L_{F_b}(s)\ge \int_{[0,1/T]} e^{-s\mu}\,dF_b(\mu)
+\ge e^{-8/\mu_1}\big(F_b(1/T)-F_b(0)\big).
+\]
+Since $H$ is SPD, there are no eigenvalues at $0$, so $F_b(0)=0$. Assumption~\ref{ass:wRV}
+gives $F_b(1/T)\ge c_F T^{-(\theta+1)}$, and $T^{-(\theta+1)}\asymp s^{-(\theta+1)}$
+on $[c_1T,c_2T]$.
+\end{proof}
+
+\begin{lemma}[Laplace bounds with one power of $\mu$]\label{lem:laplace-mu}
+Assume Assumption~\ref{ass:wRV}. Then there exist constants $c_{L,1},C_{L,1}>0$
+and $T_{1,1}\ge T_0$ (depending only on $\mu_1,\mu_{\mathrm{cut}},\theta,c_F,C_F$)
+such that for all $T\ge T_{1,1}$ and all $s\in[c_1T,c_2T]$ (with $c_1,c_2$ as in
+Lemma~\ref{lem:laplace}),
+\[
+c_{L,1}\,s^{-(\theta+2)}
+\;\le\;
+\int_{[0,\mu_{\mathrm{cut}}]} \mu\,e^{-s\mu}\,dF_b(\mu)
+\;\le\;
+C_{L,1}\,s^{-(\theta+2)}.
+\]
+\end{lemma}
+
+\begin{proof}
+Split $[0,1/T]\cup(1/T,\mu_{\mathrm{cut}}]$.
+
+\emph{Upper bound.}
+On $[0,1/T]$, use $\mu\le 1/T$ and $F_b(1/T)\le C_FT^{-(\theta+1)}$ to get
+\[
+\int_{[0,1/T]} \mu e^{-s\mu}\,dF_b(\mu) \le \frac{1}{T}F_b(1/T) \lesssim T^{-(\theta+2)}
+\asymp s^{-(\theta+2)}.
+\]
+On $(1/T,\mu_{\mathrm{cut}}]$, use Stieltjes integration by parts with
+$f(\mu)=\mu e^{-s\mu}$, so $df(\mu)=(1-s\mu)e^{-s\mu}\,d\mu$:
+\[
+\int_{(1/T,\mu_{\mathrm{cut}}]} \mu e^{-s\mu}\,dF_b(\mu)
+=
+\mu_{\mathrm{cut}}e^{-s\mu_{\mathrm{cut}}}F_b(\mu_{\mathrm{cut}})
+-\frac{1}{T}e^{-s/T}F_b(1/T)
+-\int_{1/T}^{\mu_{\mathrm{cut}}} F_b(\mu)\,(1-s\mu)e^{-s\mu}\,d\mu.
+\]
+Using $|1-s\mu|\le 1+s\mu$ and $F_b(\mu)\le C_F\mu^{\theta+1}$ yields
+\[
+\int_{(1/T,\mu_{\mathrm{cut}}]} \mu e^{-s\mu}\,dF_b(\mu)
+\le
+\mu_{\mathrm{cut}}e^{-s\mu_{\mathrm{cut}}}F_b(\mu_{\mathrm{cut}})
++\frac{1}{T}e^{-s/T}F_b(1/T)
++C_F\int_{1/T}^{\mu_{\mathrm{cut}}} (1+s\mu)e^{-s\mu}\mu^{\theta+1}\,d\mu.
+\]
+With $t=s\mu$, the last term is
+\[
+C_F s^{-(\theta+2)}\int_{s/T}^{s\mu_{\mathrm{cut}}} (1+t)e^{-t}t^{\theta+1}\,dt
+\le C'_F\,s^{-(\theta+2)}.
+\]
+For the boundary terms, $ \mu_{\mathrm{cut}}e^{-s\mu_{\mathrm{cut}}}F_b(\mu_{\mathrm{cut}})
+\le F_b(\mu_{\mathrm{cut}})\mu_{\mathrm{cut}}e^{-c_1\mu_{\mathrm{cut}}T}=O(e^{-cT})$,
+and $(1/T)e^{-s/T}F_b(1/T)=O(T^{-(\theta+2)})\asymp O(s^{-(\theta+2)})$.
+This yields the upper bound.
+
+\medskip
+\emph{Lower bound.}
+Fix any constant $K>1$ such that $c_F K^{\theta+1}-C_F>0$; for instance
+\[
+K:=2\Big(\frac{C_F}{c_F}\Big)^{\frac{1}{\theta+1}}.
+\]
+For $T$ large enough we have $K/T\le\mu_{\mathrm{cut}}$, so
+$[1/T,K/T]\subset[1/T,\mu_{\mathrm{cut}}]$.
+For $\mu\in[1/T,K/T]$ we have $\mu\ge 1/T$ and
+$e^{-s\mu}\ge e^{-sK/T}\ge e^{-Kc_2}$ (since $s\le c_2T$). Hence
+\[
+\int_{[0,\mu_{\mathrm{cut}}]} \mu e^{-s\mu}\,dF_b(\mu)
+\ge \int_{(1/T,K/T]} \mu e^{-s\mu}\,dF_b(\mu)
+\ge \frac{1}{T}e^{-Kc_2}\big(F_b(K/T)-F_b(1/T)\big).
+\]
+By Assumption~\ref{ass:wRV},
+\[
+F_b(K/T)-F_b(1/T)\ge c_F(K/T)^{\theta+1}-C_F(1/T)^{\theta+1}
+=(c_FK^{\theta+1}-C_F)\,T^{-(\theta+1)}\gtrsim T^{-(\theta+1)}.
+\]
+Therefore the last display is $\gtrsim T^{-(\theta+2)}\asymp s^{-(\theta+2)}$ since
+$s\asymp T$ on $[c_1T,c_2T]$.
+\end{proof}
+
+\begin{lemma}[Tail scaling]\label{lem:ST}
+Assume Assumption~\ref{ass:wRV}. Then there exist constants $c_S,C_S>0$ and $T_2\ge 1$
+such that for all $T\ge T_2$ and all $\eta\in I$,
+\[
+c_S(\eta T)^{-(\theta+1)}\le S_T(\eta)\le C_S(\eta T)^{-(\theta+1)}.
+\]
+In particular, since $\eta\asymp 1$ on $I$, uniformly for $\eta\in I$,
+\[
+S_T(\eta)\asymp T^{-(\theta+1)}.
+\]
+\end{lemma}
+
+\begin{proof}
+For $\eta\in I$ and $\mu_j\le\mu_{\mathrm{cut}}$, Lemma~\ref{lem:exp-comp} gives
+\[
+\sum_{\substack{2\le j\le d:\\ \mu_j\le\mu_{\mathrm{cut}}}} b_j^2 e^{-4\eta T\mu_j}
+\le S_T(\eta)\le \sum_{\substack{2\le j\le d:\\ \mu_j\le\mu_{\mathrm{cut}}}} b_j^2 e^{-\eta T\mu_j},
+\]
+so
+\[
+\mathcal L_{F_b}(4\eta T)\le S_T(\eta)\le \mathcal L_{F_b}(\eta T).
+\]
+For $\eta\in I$, $s=\eta T$ and $s=4\eta T$ both lie in $[c_1T,c_2T]$ with
+$c_1=\eta_0$ and $c_2=8/\mu_1$. Apply Lemma~\ref{lem:laplace} at these two values.
+\end{proof}
+
+\begin{lemma}[Tail curvature scaling]\label{lem:tail-curv}
+Assume Assumption~\ref{ass:wRV}. Then there exist $c_R,C_R>0$ and $T_R$ such that for all
+$T\ge T_R$ and all $\eta\in I$,
+\[
+c_R(\eta T)^{-(\theta+2)}
+\le
+\sum_{\substack{2\le j\le d:\\ \mu_j\le\mu_{\mathrm{cut}}}}
+b_j^2\,\mu_j\,(1-\eta\mu_j)^{2T-2}
+\le
+C_R(\eta T)^{-(\theta+2)}.
+\]
+In particular this sum is $\asymp T^{-(\theta+2)}$ uniformly on $\eta\in I$.
+\end{lemma}
+
+\begin{proof}
+For $\eta\in I$ and $\mu_j\le\mu_{\mathrm{cut}}$, Lemma~\ref{lem:exp-comp} (with exponent $2T-2$)
+gives
+\[
+\sum b_j^2\mu_j\,e^{-4\eta T\mu_j}
+\le
+\sum b_j^2\mu_j\,(1-\eta\mu_j)^{2T-2}
+\le
+\sum b_j^2\mu_j\,e^{-\eta T\mu_j}.
+\]
+These are exactly $\int \mu e^{-s\mu}\,dF_b(\mu)$ at $s=4\eta T$ and $s=\eta T$.
+Apply Lemma~\ref{lem:laplace-mu} to both.
+\end{proof}
+
+% ------------------------------------------------------------------
+\subsection{Head remainder bounds (uniform on the full interval)}
+
+\begin{lemma}[Uniform head bound from a top-edge gap]\label{lem:head-uniform}
+Let $J_{\mathrm{head}}:=\{j\ge 2:\mu_j>\mu_{\mathrm{cut}}\}$. If $J_{\mathrm{head}}=\varnothing$
+then $H_T(\eta)\equiv 0$ for all $\eta$. Otherwise, assume Assumption~\ref{ass:gap}.
+Then there exists $q\in(0,1)$ depending only on $(\mu_{\mathrm{cut}}/\mu_1,\varepsilon_{\mathrm{gap}})$ such that
+for all $\eta\in[1/\mu_1,2/\mu_1]$ and all $\mu\in[\mu_{\mathrm{cut}},\mu_2]$,
+\[
+|1-\eta\mu|\le q.
+\]
+Consequently, for all $T\ge 1$ and all $\eta\in[1/\mu_1,2/\mu_1]$,
+\[
+|H_T(\eta)|\le \|b\|^2 q^{2T-1}.
+\]
+\end{lemma}
+
+\begin{proof}
+If $J_{\mathrm{head}}=\varnothing$, then $H_T(\eta)$ is an empty sum and is identically zero.
+
+Otherwise, fix $\eta\in[1/\mu_1,2/\mu_1]$ and $\mu\in[\mu_{\mathrm{cut}},\mu_2]$. Then
+\[
+\eta\mu\in\Big[\frac{\mu_{\mathrm{cut}}}{\mu_1},\frac{2\mu_2}{\mu_1}\Big]
+\subset \Big(0,2(1-\varepsilon_{\mathrm{gap}})\Big).
+\]
+For any interval $[a,b]\subset(0,2)$,
+$\sup_{x\in[a,b]}|1-x|=\max\{1-a,\ b-1\}$. Hence
+\[
+|1-\eta\mu|
+\le
+\max\Big\{1-\frac{\mu_{\mathrm{cut}}}{\mu_1},\ \frac{2\mu_2}{\mu_1}-1\Big\}
+\le
+\max\Big\{1-\frac{\mu_{\mathrm{cut}}}{\mu_1},\ 1-2\varepsilon_{\mathrm{gap}}\Big\}
+=:q<1,
+\]
+which proves the uniform bound. Summing over $j\in J_{\mathrm{head}}$ gives
+\[
+|H_T(\eta)|
+\le \sum_{j\in J_{\mathrm{head}}} b_j^2 |1-\eta\mu_j|^{2T-1}
+\le \|b\|^2 q^{2T-1}.
+\]
+\end{proof}
+
+% ------------------------------------------------------------------
+\subsection{Derivative signs, minimizer location, and balance}
+
+\begin{lemma}[Derivative signs]\label{lem:signs}
+Assume Assumptions~\ref{ass:top}, \ref{ass:wRV}, and \ref{ass:gap}. Then there exists $T_3$ such that for all $T\ge T_3$:
+\begin{enumerate}[label=(\roman*),leftmargin=*]
+\item $L_T'(\eta)<0$ for all $\eta\in(1/\mu_1,\eta_0]$;
+\item $L_T'(2/\mu_1)>0$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(i) Fix $\eta\in(1/\mu_1,\eta_0]$. Then $1-\eta\mu_1\in[-3/4,0)$, hence
+\[
+-T b_1^2(1-\eta\mu_1)^{2T-1}=T b_1^2(\eta\mu_1-1)^{2T-1}
+\le T b_1^2(3/4)^{2T-1},
+\]
+which is exponentially small in $T$.
+
+For the tail term, for $\mu_j\le\mu_{\mathrm{cut}}$ we have $1-\eta\mu_j>0$ and each summand
+decreases in $\eta$, so $S_T(\eta)\ge S_T(\eta_0)$. By Lemma~\ref{lem:ST}, $S_T(\eta_0)\gtrsim T^{-(\theta+1)}$,
+so $T S_T(\eta)\gtrsim T^{-\theta}$.
+
+Finally, by Lemma~\ref{lem:head-uniform}, $T|H_T(\eta)|\le T\|b\|^2 q^{2T-1}$ is exponentially small.
+Thus for $T$ large enough, the negative tail term dominates, yielding $L_T'(\eta)<0$.
+
+(ii) At $\eta=2/\mu_1$, the top contribution is
+\[
+-T b_1^2(1-2)^{2T-1}=T b_1^2.
+\]
+Lemma~\ref{lem:ST} gives $T S_T(2/\mu_1)=O(T^{-\theta})$, and Lemma~\ref{lem:head-uniform} gives
+$T|H_T(2/\mu_1)|\le T\|b\|^2 q^{2T-1}$, both $o(T)$. Hence $L_T'(2/\mu_1)=T b_1^2-o(T)>0$ for $T$ large.
+\end{proof}
+
+\begin{lemma}[Existence and localization of a minimizer]\label{lem:minimizer}
+For each $T$, $L_T(\eta)$ attains a minimum on $[0,2/\mu_1]$.
+Moreover, under Assumptions~\ref{ass:top}, \ref{ass:wRV}, and \ref{ass:gap}, for all $T\ge T_3$,
+the (unique) minimizer $\eta_T^\star$ over $[0,2/\mu_1]$ lies in $(\eta_0,2/\mu_1)$
+and satisfies $L_T'(\eta_T^\star)=0$.
+\end{lemma}
+
+\begin{proof}
+Continuity of $L_T$ on the compact interval gives existence.
+By Lemma~\ref{lem:signs}(i), $L_T$ is strictly decreasing on $(1/\mu_1,\eta_0]$, so no minimizer lies there.
+Also, for $\eta\in[0,1/\mu_1]$ we have $1-\eta\mu_j\ge 0$ for all $j$, so by \eqref{eq:LTprime}
+$L_T'(\eta)\le 0$ (and strictly negative unless $b_j=0$ for all $j$), hence no minimizer lies in $[0,1/\mu_1]$.
+By Lemma~\ref{lem:signs}(ii), the derivative is positive at $2/\mu_1$, so $2/\mu_1$ is not a minimizer.
+Thus $\eta_T^\star\in(\eta_0,2/\mu_1)$ and, being an interior minimizer of a $C^1$ function, satisfies
+$L_T'(\eta_T^\star)=0$.
+Uniqueness follows from Lemma~\ref{lem:strict-convex}.
+\end{proof}
+
+\begin{lemma}[Top--tail balance at the minimizer]\label{lem:balance}
+Under Assumptions~\ref{ass:top}, \ref{ass:wRV}, and \ref{ass:gap}, for all $T$ large enough,
+\[
+b_1^2(\eta_T^\star\mu_1-1)^{2T-1}\asymp S_T(\eta_T^\star),
+\]
+where the implicit constants depend only on
+$\mu_1,\mu_{\mathrm{cut}},\varepsilon_{\mathrm{gap}},\theta,c_F,C_F,|b_1|,\|b\|$.
+\end{lemma}
+
+\begin{proof}
+At the interior minimizer, $L_T'(\eta_T^\star)=0$, i.e.
+\[
+b_1^2(\eta_T^\star\mu_1-1)^{2T-1} = S_T(\eta_T^\star)+H_T(\eta_T^\star).
+\]
+On $\eta_T^\star\in(\eta_0,2/\mu_1)$, Lemma~\ref{lem:ST} yields $S_T(\eta_T^\star)\gtrsim T^{-(\theta+1)}$,
+while Lemma~\ref{lem:head-uniform} implies $|H_T(\eta_T^\star)|\lesssim q^{2T}$ for a fixed $q<1$.
+Thus $H_T(\eta_T^\star)$ is exponentially smaller than $S_T(\eta_T^\star)$ and can be absorbed into constants.
+\end{proof}
+
+% ------------------------------------------------------------------
+\subsection{Main deterministic expansion theorem}
+
+\begin{theorem}[Deterministic optimal step size via weighted spectral regularity]\label{thm:det}
+Assume Assumptions~\ref{ass:top}, \ref{ass:wRV}, and \ref{ass:gap}. Let $\eta_T^\star$ be the minimizer
+of $L_T(\eta;H,b)$ over $\eta\in(0,2/\mu_1)$. Then as $T\to\infty$ (along any regime where
+Assumption~\ref{ass:wRV} holds),
+\[
+\eta_T^\star
+=
+\frac{2}{\mu_1}
+-\frac{(\theta+1)\log T}{2\mu_1 T}
++O\!\left(\frac{1}{T}\right),
+\]
+where the $O(1/T)$ constant depends only on
+\[
+\mu_1,\ \mu_{\mathrm{cut}},\ \varepsilon_{\mathrm{gap}},\ \theta,\ c_F,\ C_F,\ |b_1|,\ \|b\|.
+\]
+\end{theorem}
+
+\begin{proof}
+By Lemma~\ref{lem:minimizer}, $\eta_T^\star\in(\eta_0,2/\mu_1)$ and $L_T'(\eta_T^\star)=0$.
+Write $\eta_T^\star=\frac{2}{\mu_1}-\delta_T$ with $\delta_T\in(0,1/(4\mu_1))$,
+so $\eta_T^\star\mu_1-1=1-\mu_1\delta_T$ with $\mu_1\delta_T\in(0,1/4)$.
+
+By Lemma~\ref{lem:balance} and Lemma~\ref{lem:ST},
+\[
+b_1^2(1-\mu_1\delta_T)^{2T-1}\asymp S_T(\eta_T^\star)\asymp T^{-(\theta+1)}.
+\]
+Taking logs gives
+\begin{equation}\label{eq:logstep}
+(2T-1)\log(1-\mu_1\delta_T)=-(\theta+1)\log T+O(1).
+\end{equation}
+For $x\in(0,1/4)$ one has $-x-x^2\le \log(1-x)\le -x$. Applying this with $x=\mu_1\delta_T$
+in \eqref{eq:logstep} yields the two-sided bound
+\[
+\frac{(\theta+1)\log T-C_1}{2\mu_1 T}\le \delta_T\le \frac{(\theta+1)\log T+C_2}{2\mu_1 T}
+\]
+for constants $C_1,C_2$ depending only on the fixed parameters listed in the theorem.
+Therefore
+\[
+\delta_T=\frac{(\theta+1)\log T}{2\mu_1 T}+O\!\left(\frac{1}{T}\right),
+\]
+which implies the claimed expansion for $\eta_T^\star$.
+\end{proof}
+
+\begin{theorem}[Curvature at the optimal step size]\label{thm:det-curv}
+Assume Assumptions~\ref{ass:top}, \ref{ass:wRV}, and \ref{ass:gap}. Let $\eta_T^\star$ be the minimizer in
+Theorem~\ref{thm:det}. Then there exist constants $0<c_{\mathrm{curv}}\le C_{\mathrm{curv}}<\infty$
+(depending only on $\mu_1,\mu_{\mathrm{cut}},\varepsilon_{\mathrm{gap}},\theta,c_F,C_F,|b_1|,\|b\|$) such that for all
+$T$ large enough,
+\[
+c_{\mathrm{curv}}\,\mu_1\,T^{1-\theta}
+\;\le\;
+L_T''(\eta_T^\star)
+\;\le\;
+C_{\mathrm{curv}}\,\mu_1\,T^{1-\theta}.
+\]
+In particular $L_T''(\eta_T^\star)>0$ for all sufficiently large $T$.
+\end{theorem}
+
+\begin{proof}
+Decompose \eqref{eq:LTsecond} into top, tail, and head:
+\[
+L_T''(\eta)=L''_{\mathrm{top}}(\eta)+L''_{\mathrm{tail}}(\eta)+L''_{\mathrm{head}}(\eta),
+\]
+where $j=1$ is top, $\{j\ge2:\mu_j\le \mu_{\mathrm{cut}}\}$ is tail, and $\{j\ge2:\mu_j>\mu_{\mathrm{cut}}\}$ is head.
+
+\emph{Lower bound.}
+Since $L_T''\ge L''_{\mathrm{top}}$ and $\eta_T^\star\in(\eta_0,2/\mu_1)$,
+\[
+L_T''(\eta_T^\star)
+\ge
+T(2T-1)\,b_1^2\mu_1\,(\eta_T^\star\mu_1-1)^{2T-2}.
+\]
+By Lemma~\ref{lem:balance},
+$b_1^2(\eta_T^\star\mu_1-1)^{2T-1}\asymp S_T(\eta_T^\star)$, hence
+$(\eta_T^\star\mu_1-1)^{2T-2}\asymp S_T(\eta_T^\star)/b_1^2$ up to a bounded factor.
+Therefore
+\[
+L_T''(\eta_T^\star)\gtrsim \mu_1\,T^2\,S_T(\eta_T^\star).
+\]
+Finally Lemma~\ref{lem:ST} gives $S_T(\eta_T^\star)\gtrsim T^{-(\theta+1)}$, so
+$L_T''(\eta_T^\star)\gtrsim \mu_1 T^{1-\theta}$.
+
+\emph{Upper bound.}
+For the top term, Lemma~\ref{lem:balance} and Lemma~\ref{lem:ST} give
+$(\eta_T^\star\mu_1-1)^{2T-2}\lesssim T^{-(\theta+1)}$, hence
+\[
+L''_{\mathrm{top}}(\eta_T^\star)\lesssim \mu_1 T^2\cdot T^{-(\theta+1)}=\mu_1 T^{1-\theta}.
+\]
+For the tail term, Lemma~\ref{lem:tail-curv} yields
+\[
+L''_{\mathrm{tail}}(\eta_T^\star)
+\lesssim
+T^2\cdot T^{-(\theta+2)}=T^{-\theta}\le \mu_1 T^{1-\theta}
+\]
+for all large $T$. For the head term, Lemma~\ref{lem:head-uniform} gives $|1-\eta\mu|\le q<1$ uniformly, hence
+\[
+0\le L''_{\mathrm{head}}(\eta_T^\star)
+\le
+T(2T-1)\sum_{\mu_j>\mu_{\mathrm{cut}}} b_j^2\mu_j\,q^{2T-2}
+\le
+T(2T-1)\mu_2\|b\|^2 q^{2T-2},
+\]
+which is exponentially small in $T$. Summing the three bounds gives the upper bound.
+\end{proof}
+
+\begin{remark}[What the curvature scaling says]
+Theorem~\ref{thm:det-curv} gives $L_T''(\eta_T^\star)\asymp \mu_1 T^{1-\theta}$.
+Thus curvature stays bounded away from $0$ (indeed, diverges) if $\theta<1$, is order $1$ if
+$\theta=1$, and decays polynomially if $\theta>1$.
+\end{remark}
+
+% ------------------------------------------------------------------
+\subsection{Uniform curvature on a shrinking window around $\eta_T^\star$}
+
+\begin{lemma}[Uniform curvature near $\eta_T^\star$ on a $1/T$ window]
+\label{lem:curv-window}
+Assume Assumptions~\ref{ass:top}, \ref{ass:wRV}, and \ref{ass:gap}. Fix any $M>0$ and
+define the shrinking window
+\[
+W_{T,M}
+:=
+\Big[\eta_T^\star-\frac{M}{T},\ \eta_T^\star+\frac{M}{T}\Big]\cap I,
+\qquad
+I=\Big[\eta_0,\frac{2}{\mu_1}\Big].
+\]
+Then there exist constants $0<c_M\le C_M<\infty$ and $T_M\ge 1$
+(depending only on $\mu_1,\mu_{\mathrm{cut}},\varepsilon_{\mathrm{gap}},\theta,c_F,C_F,|b_1|,\|b\|$ and $M$)
+such that for all $T\ge T_M$,
+\[
+c_M\,\mu_1\,T^{1-\theta}
+\ \le\
+L_T''(\eta;H,b)
+\ \le\
+C_M\,\mu_1\,T^{1-\theta},
+\qquad \forall \eta\in W_{T,M}.
+\]
+In particular, if $\theta\ge 1$ then $\sup_{\eta\in W_{T,M}} L_T''(\eta)=O(1)$ as $T\to\infty$.
+\end{lemma}
+
+\begin{proof}
+Decompose \eqref{eq:LTsecond} into top, tail, and head contributions:
+\[
+L_T''(\eta)=L_{\mathrm{top}}''(\eta)+L_{\mathrm{tail}}''(\eta)+L_{\mathrm{head}}''(\eta),
+\]
+where
+\[
+L_{\mathrm{top}}''(\eta)=T(2T-1)b_1^2\mu_1(1-\eta\mu_1)^{2T-2},
+\]
+and $L_{\mathrm{tail}}''$ (resp.\ $L_{\mathrm{head}}''$) is the sum over
+$\{j\ge 2:\mu_j\le \mu_{\mathrm{cut}}\}$ (resp.\ $\{j\ge 2:\mu_j>\mu_{\mathrm{cut}}\}$).
+
+\medskip\noindent
+\emph{Step 1: the window stays away from the boundary.}
+Write $\eta_T^\star=\frac{2}{\mu_1}-\delta_T$ with $\delta_T>0$.
+By Theorem~\ref{thm:det}, $\delta_T=\frac{(\theta+1)\log T}{2\mu_1 T}+O(1/T)$, hence
+$\delta_T T\to\infty$. Therefore, for any fixed $M>0$ and all $T$ sufficiently large,
+$\eta_T^\star+\frac{M}{T}\le \frac{2}{\mu_1}$ and $W_{T,M}\subset I$ is nonempty.
+
+Define
+\[
+a(\eta):=\eta\mu_1-1\in(0,1] \qquad \text{for }\eta\in\Big(\frac{1}{\mu_1},\frac{2}{\mu_1}\Big].
+\]
+For $\eta\in W_{T,M}$ we have $a(\eta)=1-\mu_1\big(\frac{2}{\mu_1}-\eta\big)
+=1-\mu_1\big(\delta_T+O(1/T)\big)\to 1$.
+Hence, for all $T$ large enough (depending on $M$), we may assume
+\begin{equation}\label{eq:a-lower}
+\inf_{\eta\in W_{T,M}} a(\eta)\ge \frac12.
+\end{equation}
+
+\medskip\noindent
+\emph{Step 2: the top curvature is stable across $W_{T,M}$.}
+For $\eta\in W_{T,M}$, use the mean value theorem for $\log a(\eta)$:
+\[
+\big|\log a(\eta)-\log a(\eta_T^\star)\big|
+\le \sup_{\xi\in W_{T,M}}\frac{1}{a(\xi)}\,|a(\eta)-a(\eta_T^\star)|.
+\]
+By \eqref{eq:a-lower} and $a(\eta)=\mu_1\eta-1$,
+\[
+\big|\log a(\eta)-\log a(\eta_T^\star)\big|
+\le 2\,\mu_1\,|\eta-\eta_T^\star|
+\le \frac{2\mu_1 M}{T}.
+\]
+Multiplying by $2T-2\le 2T$ and exponentiating yields
+\[
+e^{-4\mu_1 M}
+\le
+\frac{a(\eta)^{2T-2}}{a(\eta_T^\star)^{2T-2}}
+\le
+e^{4\mu_1 M},
+\qquad \forall \eta\in W_{T,M}.
+\]
+Consequently,
+\begin{equation}\label{eq:top-stable}
+e^{-4\mu_1 M}\,L_{\mathrm{top}}''(\eta_T^\star)
+\ \le\
+L_{\mathrm{top}}''(\eta)
+\ \le\
+e^{4\mu_1 M}\,L_{\mathrm{top}}''(\eta_T^\star),
+\qquad \forall \eta\in W_{T,M}.
+\end{equation}
+
+\medskip\noindent
+\emph{Step 3: tail and head curvature are uniformly negligible on $I$.}
+By Lemma~\ref{lem:tail-curv}, uniformly for $\eta\in I$,
+\[
+0\le L_{\mathrm{tail}}''(\eta)
+=
+T(2T-1)\sum_{\substack{2\le j\le d:\\ \mu_j\le\mu_{\mathrm{cut}}}}
+b_j^2\mu_j(1-\eta\mu_j)^{2T-2}
+\ \lesssim\
+T^2\cdot T^{-(\theta+2)}
+=
+T^{-\theta}.
+\]
+By Lemma~\ref{lem:head-uniform}, there exists $q\in(0,1)$ such that uniformly for $\eta\in I$,
+\[
+0\le L_{\mathrm{head}}''(\eta)
+\le
+T(2T-1)\sum_{\substack{2\le j\le d:\\ \mu_j>\mu_{\mathrm{cut}}}}
+b_j^2\mu_j\,q^{2T-2}
+\ \lesssim\ T^2 q^{2T-2}.
+\]
+
+\medskip\noindent
+\emph{Step 4: comparison to the curvature scale at $\eta_T^\star$.}
+By Theorem~\ref{thm:det-curv}, there exist constants $0<c_{\mathrm{curv}}\le C_{\mathrm{curv}}<\infty$
+such that for all large $T$,
+\begin{equation}\label{eq:curv-star-scale}
+c_{\mathrm{curv}}\mu_1 T^{1-\theta}
+\le
+L_T''(\eta_T^\star)
+\le
+C_{\mathrm{curv}}\mu_1 T^{1-\theta}.
+\end{equation}
+Moreover, since $L_T''(\eta_T^\star)=L_{\mathrm{top}}''(\eta_T^\star)+L_{\mathrm{tail}}''(\eta_T^\star)+L_{\mathrm{head}}''(\eta_T^\star)$
+and the last two terms are $O(T^{-\theta})+O(T^2q^{2T})$, we also have
+$L_{\mathrm{top}}''(\eta_T^\star)\asymp \mu_1 T^{1-\theta}$ with constants depending only on the same fixed parameters.
+
+Combine \eqref{eq:top-stable} with the bounds on $L_{\mathrm{tail}}''$ and $L_{\mathrm{head}}''$ to obtain, uniformly for $\eta\in W_{T,M}$,
+\[
+L_T''(\eta)
+=
+L_{\mathrm{top}}''(\eta)+O(T^{-\theta})+O(T^2q^{2T})
+\asymp
+\mu_1 T^{1-\theta}.
+\]
+This yields the desired two-sided bounds with constants $c_M,C_M$.
+\end{proof}
+
+\begin{remark}[Quadratic control of $L_T$ near $\eta_T^\star$]
+\label{rem:quad-window}
+Under the assumptions of Lemma~\ref{lem:curv-window}, for $T$ large enough and all $\eta\in W_{T,M}$,
+Taylor's theorem with integral remainder and the fact that $L_T'(\eta_T^\star)=0$ imply
+\[
+\frac{c_M}{2}\,\mu_1\,T^{1-\theta}\,(\eta-\eta_T^\star)^2
+\ \le\
+L_T(\eta)-L_T(\eta_T^\star)
+\ \le\
+\frac{C_M}{2}\,\mu_1\,T^{1-\theta}\,(\eta-\eta_T^\star)^2.
+\]
+\end{remark}
+
+
+% ------------------------------------------------------------------
+\section{Gaussian-sketched random features: model and concentration inputs}
+\label{sec:rf}
+
+\subsection{Random features and the induced quadratic problem}
+
+Let $\mathcal H$ be a real separable Hilbert space. Let $\psi\in\mathcal H$ be centered with
+trace-class covariance operator
+\[
+\Sigma:=\mathbb E[\psi\otimes\psi],
+\]
+assumed self-adjoint, positive, and trace-class, with eigenpairs $(\lambda_k,u_k)$
+and a spectral gap $\gamma:=\lambda_1-\lambda_2>0$.
+
+\paragraph{Gaussian sketch (basis-free).}
+Let $g_1,\dots,g_N$ be i.i.d.\ standard Gaussian elements on $\mathcal H$ (isonormal process),
+so that for any $f\in\mathcal H$, $\langle g_i,f\rangle\sim\mathcal N(0,\|f\|^2)$ and the
+$g_i$ are independent. Define the sketched features $\phi\in\mathbb R^N$ by
+\[
+\phi_i := \frac{1}{\sqrt N}\,\langle g_i,\psi\rangle,\qquad i=1,\dots,N.
+\]
+Define also the Hilbert-valued Gaussian vectors
+\[
+X_i := \Sigma^{1/2}g_i\in\mathcal H,\qquad i=1,\dots,N,
+\]
+and the linear map $Z:\mathbb R^N\to\mathcal H$ by $Z e_i = X_i$ (equivalently $Z=[X_1,\dots,X_N]$).
+Then the RF covariance matrix and RF linear term are
+\[
+H_N:=\mathbb E[\phi\phi^\top]=\frac1N Z^\top Z,
+\qquad
+b_N:=\mathbb E[y\phi]=\frac{1}{\sqrt N}\,Z^\top \Sigma^{1/2}\bar w,
+\]
+for noiseless targets $y=\langle \bar w,\psi\rangle$.
+Thus the RF step-size problem is exactly the deterministic problem with $(H,b)=(H_N,b_N)$
+in dimension $d=N$.
+
+\subsection{Almost sure SPD of $H_N$}
+
+\begin{lemma}[Almost sure SPD of $H_N$]\label{lem:SPD}
+Assume $\Sigma$ has at least $N$ strictly positive eigenvalues (e.g.\ $\lambda_k>0$ for all $k$).
+Then $H_N$ is SPD almost surely, hence $v_N^\star=H_N^{-1}b_N$ is well-defined almost surely.
+\end{lemma}
+
+\begin{proof}
+We have $H_N=\frac1N Z^\top Z$ with $Z=[X_1,\dots,X_N]$ and $X_i=\Sigma^{1/2}g_i$ i.i.d.\ Gaussian in $\mathcal H$
+with covariance $\Sigma$. If $\mathrm{rank}(\Sigma)\ge N$, then the law of $(X_1,\dots,X_N)$ is nondegenerate on an
+$N$-dimensional injective subspace, which implies the columns of $Z$ are linearly independent almost surely.
+Thus $Z^\top Z$ is SPD almost surely.
+\end{proof}
+
+\subsection{Covariance-operator concentration (Koltchinskii--Lounici)}
+
+Define the sample covariance operator
+\[
+\widehat\Sigma_N:=\frac1N\sum_{i=1}^N X_i\otimes X_i = \frac1N Z Z^\top.
+\]
+The nonzero eigenvalues of $\widehat\Sigma_N$ coincide with those of $H_N=\frac1N Z^\top Z$
+(with the same multiplicities), and in particular the top eigenvalues match.
+
+\begin{lemma}[Koltchinskii--Lounici concentration; informal form]\label{lem:KL}
+Let $X$ be centered Gaussian in a separable Hilbert space with covariance $\Sigma$ and
+$\widehat\Sigma_N$ its sample covariance from $N$ i.i.d.\ samples. Then
+\[
+\mathbb E\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}
+\asymp
+\|\Sigma\|_{\mathrm{op}}\Big(\sqrt{\frac{r(\Sigma)}{N}}\ \vee\ \frac{r(\Sigma)}{N}\Big),
+\]
+and for all $t\ge 1$, with probability at least $1-e^{-t}$,
+\[
+\Big|\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}-\mathbb E\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}\Big|
+\lesssim
+\|\Sigma\|_{\mathrm{op}}\Big(\sqrt{\frac{t}{N}}\ \vee\ \frac{t}{N}\Big),
+\]
+where $r(\Sigma)$ is an intrinsic dimension parameter (effective rank in the Hilbert case).
+See Koltchinskii--Lounici~\cite{KL2017} for precise definitions and constants.
+\end{lemma}
+
+\subsection{Top eigenvalue perturbation and a uniform relative gap}
+
+Let $\widehat\lambda_1^{(N)}\ge \widehat\lambda_2^{(N)}\ge\cdots$ denote the eigenvalues of $H_N$
+(equivalently of $\widehat\Sigma_N$).
+
+\begin{lemma}[High-probability top-eigenvalue control]\label{lem:top-eig}
+Let $\gamma=\lambda_1-\lambda_2>0$. There exist $c>0$ and $N_0$ such that for all $N\ge N_0$,
+\[
+\mathbb P\big(\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}>\gamma/2\big)\le e^{-cN}.
+\]
+On the event $\{\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}\le\gamma/2\}$ one has
+$|\widehat\lambda_1^{(N)}-\lambda_1|\le \gamma/2$ and $\widehat\lambda_1^{(N)}\in[\lambda_1/2,3\lambda_1/2]$.
+\end{lemma}
+
+\begin{proof}
+By Lemma~\ref{lem:KL}, $\mathbb E\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}=O(N^{-1/2})$.
+Choose $N_0$ so that $\mathbb E\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}\le\gamma/4$ for $N\ge N_0$.
+Using the high-probability part of Lemma~\ref{lem:KL} with $t=cN$ and choosing $c>0$ sufficiently small
+(depending on $\gamma/\|\Sigma\|_{\mathrm{op}}$) makes the fluctuation term at most $\gamma/4$, yielding the claim.
+Weyl's inequality gives $|\widehat\lambda_1^{(N)}-\lambda_1|\le\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}$.
+\end{proof}
+
+\begin{lemma}[Uniform relative top gap on the same good event]\label{lem:rf-gap}
+On the event $\{\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}\le \gamma/4\}$,
+\[
+\frac{\widehat\lambda_2^{(N)}}{\widehat\lambda_1^{(N)}}
+\le
+\frac{\lambda_1-3\gamma/4}{\lambda_1-\gamma/4}
+=1-\varepsilon_{\mathrm{RF}},
+\qquad
+\varepsilon_{\mathrm{RF}}:=\frac{\gamma/2}{\lambda_1-\gamma/4}>0.
+\]
+\end{lemma}
+
+\begin{proof}
+Weyl gives $\widehat\lambda_1^{(N)}\ge \lambda_1-\gamma/4$ and
+$\widehat\lambda_2^{(N)}\le \lambda_2+\gamma/4=\lambda_1-3\gamma/4$. Divide the two bounds.
+\end{proof}
+
+% ------------------------------------------------------------------
+\subsection{Population capacity and source assumptions}\label{subsec:cap-source}
+
+Let $(\lambda_k,u_k)_{k\ge 1}$ be the eigenpairs of $\Sigma$, ordered so that
+$\lambda_1>\lambda_2\ge\lambda_3\ge\cdots>0$.
+
+\begin{assumption}[Capacity]\label{ass:cap}
+There exist $\alpha>1$ and constants $c_\lambda,C_\lambda>0$ such that
+\[
+c_\lambda k^{-\alpha} \le \lambda_k \le C_\lambda k^{-\alpha}
+\qquad \forall k\ge 1.
+\]
+\end{assumption}
+
+\begin{assumption}[Source (including the top mode)]\label{ass:source}
+There exist $\beta>0$ and $g\in\mathcal H$ such that $\bar w = \Sigma^\beta g$.
+In the eigenbasis $(u_k)$, write $g_k:=\langle g,u_k\rangle$ and assume there are constants
+$0<c_g\le C_g<\infty$ such that
+\[
+c_g \le |g_k|^2 \le C_g
+\qquad \forall k\ge 1.
+\]
+\end{assumption}
+
+Let $b_\infty:=\Sigma\bar w$ and $b_{\infty,k}:=\langle b_\infty,u_k\rangle$.
+Fix $\mu_{\mathrm{cut}}\le \lambda_1/8$ and define the population weighted CDF (away from the top mode)
+\[
+F_\infty(x)
+:=\sum_{\substack{k\ge 2\\ \lambda_k\le \min\{x,\mu_{\mathrm{cut}}\}}}
+b_{\infty,k}^2.
+\]
+
+\begin{proposition}[Population weighted regular variation from capacity and source]\label{prop:pop-wRV}
+Under Assumptions~\ref{ass:cap} and \ref{ass:source}, there exist constants
+$c_\infty,C_\infty>0$ and $x_0>0$ such that for all $x\in(0,x_0]$,
+\[
+c_\infty x^{\theta+1}\le F_\infty(x)\le C_\infty x^{\theta+1},
+\qquad
+\theta:=2\beta+1-\frac{1}{\alpha}>0.
+\]
+\end{proposition}
+
+\begin{proof}
+In the eigenbasis of $\Sigma$, $\bar w_k=\lambda_k^\beta g_k$, hence
+$b_{\infty,k}=\lambda_k\bar w_k=\lambda_k^{\beta+1}g_k$ and $b_{\infty,k}^2\asymp \lambda_k^{2(\beta+1)}$.
+With $\lambda_k\asymp k^{-\alpha}$, the condition $\lambda_k\le x$ is equivalent to $k\gtrsim x^{-1/\alpha}$, giving
+\[
+F_\infty(x)\asymp \sum_{k\gtrsim x^{-1/\alpha}} k^{-2\alpha(\beta+1)}
+\asymp x^{2(\beta+1)-1/\alpha}=x^{\theta+1}.
+\]
+\end{proof}
+
+\subsection{Top eigenvalue perturbation and inverse moments}
+
+Let $\widehat\lambda_1^{(N)}$ denote the top eigenvalue of $H_N$ (equivalently of $\widehat\Sigma_N$).
+
+\begin{lemma}[High-probability top-eigenvalue control]\label{lem:top-eig}
+Let $\gamma=\lambda_1-\lambda_2>0$. There exists $c>0$ and $N_0$ such that for all $N\ge N_0$,
+\[
+\mathbb P\big(\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}>\gamma/2\big)\le e^{-cN}.
+\]
+On the event $\{\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}\le\gamma/2\}$ one has
+$|\widehat\lambda_1^{(N)}-\lambda_1|\le \gamma/2$ and in particular
+$\widehat\lambda_1^{(N)}\in[\lambda_1/2,3\lambda_1/2]$.
+\end{lemma}
+
+\begin{proof}
+By Lemma~\ref{lem:KL}, $\mathbb E\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}=O(N^{-1/2})$.
+Choose $N_0$ so that $\mathbb E\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}\le\gamma/4$ for $N\ge N_0$.
+Then take $t=cN$ and use the high-probability part of Lemma~\ref{lem:KL} to ensure the fluctuation term is $\le\gamma/4$,
+yielding $\mathbb P(\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}>\gamma/2)\le e^{-cN}$.
+Weyl's inequality gives $|\widehat\lambda_1^{(N)}-\lambda_1|\le\|\widehat\Sigma_N-\Sigma\|_{\mathrm{op}}$.
+\end{proof}
+
+\begin{lemma}[Uniform inverse-moment bounds]\label{lem:inv-mom-bdd}
+For all $N>4$,
+\[
+\mathbb E\!\left[\frac{1}{\widehat\lambda_1^{(N)}}\right]\le \frac{1}{\lambda_1}\frac{N}{N-2},
+\qquad
+\mathbb E\!\left[\frac{1}{(\widehat\lambda_1^{(N)})^2}\right]\le \frac{1}{\lambda_1^2}\frac{N^2}{(N-2)(N-4)}.
+\]
+In particular, $\mathbb E[1/(\widehat\lambda_1^{(N)})^2]=O(1)$ uniformly in $N$.
+\end{lemma}
+
+\begin{proof}
+Decompose $\Sigma=\lambda_1 u_1u_1^\top+\Sigma_\perp$ with $\Sigma_\perp\succeq 0$. Then
+\[
+H_N=A^\top\Sigma A\succeq \lambda_1 A^\top u_1u_1^\top A = \lambda_1 z z^\top,\qquad z:=A^\top u_1.
+\]
+Hence $\widehat\lambda_1^{(N)}\ge \lambda_1\|z\|_2^2$. Since $A_{ki}\sim\mathcal N(0,1/N)$ and $\|u_1\|=1$,
+$z\sim \mathcal N(0,(1/N)I_N)$ and $\|z\|_2^2\stackrel{d}{=}\chi^2_N/N$. Therefore
+\[
+\frac{1}{\widehat\lambda_1^{(N)}}\le \frac{1}{\lambda_1}\frac{N}{\chi^2_N},\qquad
+\frac{1}{(\widehat\lambda_1^{(N)})^2}\le \frac{1}{\lambda_1^2}\frac{N^2}{(\chi^2_N)^2}.
+\]
+Using $\mathbb E[1/\chi^2_N]=1/(N-2)$ and $\mathbb E[1/(\chi^2_N)^2]=1/((N-2)(N-4))$ for $N>4$ gives the result.
+\end{proof}
+
+\begin{lemma}[Inverse-moment expansions to order $1/N$]\label{lem:inv-exp}
+Assume $\gamma:=\lambda_1-\lambda_2>0$. Then
+\[
+\mathbb E\!\left[\frac{1}{\widehat\lambda_1^{(N)}}\right]=\frac{1}{\lambda_1}+O\!\left(\frac{1}{N}\right),
+\qquad
+\mathbb E\!\left[\frac{2}{\widehat\lambda_1^{(N)}}\right]=\frac{2}{\lambda_1}+O\!\left(\frac{1}{N}\right),
+\]
+where the $O(1/N)$ constants depend only on $\lambda_1,\gamma,\|\Sigma\|_{\mathrm{op}}$ and the
+intrinsic-dimension parameter $r(\Sigma)$ appearing in Lemma~\ref{lem:KL}.
+\end{lemma}
+
+\begin{proof}
+This is the same perturbation-plus-Taylor-expansion argument as in the draft: write $E=\widehat\Sigma_N-\Sigma$,
+work on the good event $\|E\|_{\mathrm{op}}\le \gamma/2$, use eigenvalue perturbation to get
+$\widehat\lambda_1^{(N)}-\lambda_1=\langle u_1,Eu_1\rangle+O(\|E\|_{\mathrm{op}}^2/\gamma)$,
+then Taylor expand $x\mapsto 1/x$ around $\lambda_1$ and use $\mathbb E\|E\|_{\mathrm{op}}^2=O(1/N)$ from KL.
+The contribution of the complement event is exponentially small and controlled via Lemma~\ref{lem:inv-mom-bdd}.
+\end{proof}
+
+% ------------------------------------------------------------------
+\subsection{RF weighted regularity on scales $\mu\sim 1/T$ (imported local-law input)}
+
+Fix $\mu_{\mathrm{cut}}\le \lambda_1/8$. For $H_N$, define the RF weighted CDF away from the top mode:
+\[
+F^{(N)}_{b_N}(x):=\sum_{\substack{2\le j\le N:\\ \widehat\lambda_j^{(N)}\le \min\{x,\mu_{\mathrm{cut}}\}}}
+\langle b_N,\widehat v_j^{(N)}\rangle^2,
+\]
+where $(\widehat\lambda_j^{(N)},\widehat v_j^{(N)})$ are the eigenpairs of $H_N$.
+
+\begin{assumption}[RF weighted spectral regularity on relevant scales]\label{ass:RF-wRV}
+Fix $\mu_{\mathrm{cut}}\le \lambda_1/8$ and $\theta>0$. There exist constants
+$c_F,C_F,c_0,C_0>0$, $T_0\ge 1$, and $c_T>0$ such that for all $N$ large enough and all integers
+$T$ in the regime
+\[
+T_0\le T\le c_T N^\alpha,
+\]
+there is an event $\mathcal E_{N,T}$ with \emph{overwhelming probability}
+(i.e.\ for every $D>0$, $\mathbb P(\mathcal E_{N,T}^c)\le N^{-D}$ for $N$ large enough) on which:
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item (\emph{Top eigenvalue and gap control})
+$\widehat\lambda_1^{(N)}\in[\lambda_1/2,2\lambda_1]$ and
+$\widehat\lambda_2^{(N)}/\widehat\lambda_1^{(N)}\le 1-\varepsilon_{\mathrm{RF}}$
+for a fixed $\varepsilon_{\mathrm{RF}}>0$ depending only on $(\lambda_1,\gamma)$.
+\item (\emph{Top-mode overlap and norm control})
+$|\langle b_N,\widehat v_1^{(N)}\rangle|\ge c_0$ and $\|b_N\|_2\le C_0$.
+\item (\emph{Weighted regular variation on $[1/T,\mu_{\mathrm{cut}}]$})
+For all $x\in[1/T,\mu_{\mathrm{cut}}]$,
+\[
+c_F x^{\theta+1}\le F^{(N)}_{b_N}(x)\le C_F x^{\theta+1}.
+\]
+\end{enumerate}
+\end{assumption}
+
+\begin{remark}[Why the regime $T\le c_TN^\alpha$ appears]\label{rem:T-regime}
+Under capacity $\lambda_k\asymp k^{-\alpha}$ one expects $\mu_{\min}(H_N)\asymp N^{-\alpha}$.
+Then $T\le c_TN^\alpha$ ensures $1/T\gtrsim \mu_{\min}(H_N)$ so the window $[1/T,\mu_{\mathrm{cut}}]$ lies above the
+spectral floor (see Remark~\ref{rem:finite-d}).
+\end{remark}
+
+% ------------------------------------------------------------------
+\section{RF optimal step size (and curvature): final theorems}
+
+Let $\eta^\star(T,N)$ denote a minimizer of the RF population excess loss after $T$ GD
+steps with step size $\eta$ on the RF quadratic, i.e.\ a minimizer of $L_T(\eta;H_N,b_N)$
+over stable $\eta\in(0,2/\widehat\lambda_1^{(N)})$.
+
+\begin{theorem}[Gaussian RF: optimal constant step size (high probability and in expectation)]
+\label{thm:RF-clean}
+Let $\Sigma$ be a trace-class, self-adjoint, positive operator on a separable Hilbert space
+with eigenvalues $\lambda_1>\lambda_2\ge\cdots>0$ and gap $\gamma:=\lambda_1-\lambda_2>0$.
+Let $\psi$ be centered with covariance $\Sigma$, and let $g_1,\dots,g_N$ be i.i.d.\ standard
+Gaussians on the Hilbert space (isonormal process). Define
+\[
+X_i:=\Sigma^{1/2}g_i,\qquad Z:=[X_1,\dots,X_N],\qquad
+H_N:=\frac1N Z^\top Z,\qquad b_N:=\frac{1}{\sqrt N}Z^\top\Sigma^{1/2}\bar w.
+\]
+Consider population GD on the quadratic defined by $(H_N,b_N)$ for $T$ steps, and let
+$\eta^\star(T,N)$ be a minimizer of $L_T(\eta;H_N,b_N)$ over stable $\eta\in(0,2/\widehat\lambda_1^{(N)})$,
+where $\widehat\lambda_1^{(N)}$ is the top eigenvalue of $H_N$.
+
+Assume capacity/source:
+\begin{enumerate}[label=(\roman*),leftmargin=*]
+\item (Capacity) $\lambda_k\asymp k^{-\alpha}$ for some $\alpha>1$.
+\item (Source) $\bar w=\Sigma^\beta g$ with some $\beta>0$, and in the eigenbasis $(u_k)$,
+      $|g_k|^2\asymp 1$ for all $k\ge 1$ (in particular $g_1\neq 0$).
+\end{enumerate}
+Let $\theta:=2\beta+1-\frac{1}{\alpha}>0$ and fix $\mu_{\mathrm{cut}}\le \lambda_1/8$.
+Fix a horizon regime $T_0\le T\le c_T N^\alpha$.
+
+Assume furthermore that there exists an event $\mathcal E_{N,T}$ on which the following hold:
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item $\widehat\lambda_1^{(N)}\in[\lambda_1/2,2\lambda_1]$ and
+      $\widehat\lambda_2^{(N)}/\widehat\lambda_1^{(N)}\le 1-\varepsilon_{\mathrm{RF}}$
+      for some fixed $\varepsilon_{\mathrm{RF}}>0$ depending only on $(\lambda_1,\gamma)$;
+\item $|\langle b_N,\widehat v_1^{(N)}\rangle|\ge c_0$ and $\|b_N\|_2\le C_0$;
+\item (RF weighted regularity on $[1/T,\mu_{\mathrm{cut}}]$) for all $x\in[1/T,\mu_{\mathrm{cut}}]$,
+\[
+c_F x^{\theta+1}\le
+F^{(N)}_{b_N}(x)
+:=
+\sum_{\substack{2\le j\le N:\\ \widehat\lambda_j^{(N)}\le \min\{x,\mu_{\mathrm{cut}}\}}}
+\langle b_N,\widehat v_j^{(N)}\rangle^2
+\le C_F x^{\theta+1}.
+\]
+\end{enumerate}
+and that $\mathbb P(\mathcal E_{N,T}^c)\le \delta_{N,T}$.
+
+Then there exist deterministic constants $C_T<\infty$ and $N_0$ (depending only on
+$\lambda_1,\gamma,\mu_{\mathrm{cut}},\alpha,\beta$ and the constants in (a)--(c)) such that
+for all $N\ge N_0$ and all $T_0\le T\le c_TN^\alpha$:
+
+\medskip
+\noindent\textbf{(1) High-probability expansion.}
+On $\mathcal E_{N,T}$,
+\[
+\eta^\star(T,N)
+=
+\frac{2}{\widehat\lambda_1^{(N)}}
+-\frac{(\theta+1)\log T}{2\widehat\lambda_1^{(N)}\,T}
++O\!\left(\frac{1}{T}\right),
+\]
+where the $O(1/T)$ constant is bounded by $C_T$ uniformly over $\mathcal E_{N,T}$.
+
+\medskip
+\noindent\textbf{(2) Expectation expansion with explicit failure-probability remainder.}
+Moreover,
+\[
+\mathbb E[\eta^\star(T,N)]
+=
+\frac{2}{\lambda_1}
+-\frac{(\theta+1)\log T}{2\lambda_1 T}
++O\!\left(\frac{1}{T}\right)
++O\!\left(\frac{1}{N}\right)
++O\!\big(\delta_{N,T}^{1/2}\big).
+\]
+In particular, if $\delta_{N,T}\le N^{-D}$ for some $D>2$ uniformly over
+$T\le c_TN^\alpha$, then the last term is $o(1/N)$ and can be absorbed into $O(1/N)$.
+\end{theorem}
+
+
+\begin{thebibliography}{99}
+
+\bibitem{KL2017}
+V.~Koltchinskii and K.~Lounici.
+\newblock Concentration inequalities and moment bounds for sample covariance operators.
+\newblock \emph{Bernoulli} 23(1):110--133, 2017. Also available as arXiv:1405.2468.
+
+\bibitem{Chouard2022}
+C.~Chouard.
+\newblock Quantitative deterministic equivalent of sample covariance matrices with a general dependence structure.
+\newblock arXiv:2211.13044, 2022.
+
+\bibitem{DLM2024}
+L.~Defilippis, B.~Loureiro, and T.~Misiakiewicz.
+\newblock Dimension-free deterministic equivalents and scaling laws for random feature regression.
+\newblock arXiv:2405.15699, 2024. Also in NeurIPS 2024.
+
+\bibitem{Bordelon2023}
+B.~Bordelon, A.~Atanasov, and C.~Pehlevan.
+\newblock A dynamical model of neural scaling laws.
+\newblock \emph{Advances in Neural Information Processing Systems}, 2023.
+
+\bibitem{Karkada2024}
+D.~Karkada, J.~Turnbull, Y.~Liu, and J.~B.~Simon.
+\newblock Predicting kernel regression learning curves from only raw data statistics.
+\newblock arXiv:2402.09371, 2024.
+
+\bibitem{Simon2023}
+J.~B. Simon et al.
+\newblock More is Better in Modern Machine Learning.
+\newblock arXiv:2311.14646, 2023.
+
+\end{thebibliography}
+
+\end{document}

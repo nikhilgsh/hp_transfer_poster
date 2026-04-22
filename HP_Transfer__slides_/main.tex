@@ -1,0 +1,339 @@
+    % Beamer Presentation
+% LaTeX Template
+% Version 1.0 (10/11/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND THEMES
+%----------------------------------------------------------------------------------------
+
+\documentclass[10pt,aspectratio=32,tikz]{beamer}   
+% \documentclass[10pt,aspectratio=32,tikz,handout]{beamer}  
+
+
+\usetheme[usetitleprogressbar]{metropolis}
+
+\mode<presentation> {
+\setbeamercovered{transparent=8}
+
+% The Beamer class comes with a number of default slide themes
+% which change the colors and layouts of slides. Below this is a list
+% of all the themes, uncomment each in turn to see what they look like.
+
+%\usetheme{default}
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{Dresden}
+%\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+% \usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+% As well as themes, the Beamer class has a number of color themes
+% for any slide theme. Uncomment each of these in turn to see how it
+% changes the colors of your current slide theme.
+
+%\usecolortheme{albatross}
+%\usecolortheme{beaver}
+%\usecolortheme{beetle}
+%\usecolortheme{crane}
+%\usecolortheme{dolphin}
+%\usecolortheme{dove}
+%\usecolortheme{fly}
+%\usecolortheme{lily}
+%\usecolortheme{orchid}
+%\usecolortheme{rose}
+%\usecolortheme{seagull}
+%\usecolortheme{seahorse}
+%\usecolortheme{whale}
+%\usecolortheme{wolverine}
+
+%\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+%\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
+
+%\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+}
+
+\RequirePackage{tikz}
+\usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,calc,shapes,decorations.pathreplacing}
+% \usetikzlibrary{positioning, arrows.meta, decorations.pathreplacing}
+\tikzstyle{every picture}+=[remember picture]
+% By default all math in TikZ nodes are set in inline mode. Change this to
+% displaystyle so that we don't get small fractions.
+% \everymath{\displaystyle} 
+
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.17}
+\usepackage{adjustbox}
+\usetikzlibrary{calc}
+
+\newlength\TopY
+\newlength\BotY
+\newlength\TotalHeight
+
+ 
+\RequirePackage{amsmath,amssymb,amsthm}
+\usefonttheme{default}
+
+% \usepackage{graphicx} % Allows including images
+\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
+
+% \tikzstyle{mynode}=[thick,draw=blue,fill=blue!20,circle,minimum size=22]
+% \usepackage{neuralnetwork}
+
+\usepackage{tikz}
+%\usepackage{etoolbox} % for \ifthen
+\usepackage{listofitems} % for \readlist to create arrays
+\usetikzlibrary{arrows.meta} % for arrow size
+\usepackage[outline]{contour} % glow around text
+\contourlength{1.4pt}
+ 
+\tikzset{>=latex} % for LaTeX arrow head
+% \usepackage{xcolor}
+\colorlet{myred}{red!80!black}
+\colorlet{myblue}{blue!80!black}
+\colorlet{mygreen}{green!60!black}
+\colorlet{myorange}{orange!70!red!60!black}
+\colorlet{mydarkred}{red!30!black}
+\colorlet{mydarkblue}{blue!40!black}
+\colorlet{mydarkgreen}{green!30!black}
+\tikzstyle{node}=[thick,circle,draw=myblue,minimum size=22,inner sep=0.5,outer sep=0.6]
+\tikzstyle{node in}=[node,green!20!black,draw=mygreen!30!black,fill=mygreen!25]
+\tikzstyle{node hidden}=[node,blue!20!black,draw=myblue!30!black,fill=myblue!20]
+\tikzstyle{node convol}=[node,orange!20!black,draw=myorange!30!black,fill=myorange!20]
+\tikzstyle{node out}=[node,red!20!black,draw=myred!30!black,fill=myred!20]
+\tikzstyle{connect}=[thick,mydarkblue] %,line cap=round
+\tikzstyle{connect arrow}=[-{Latex[length=4,width=3.5]},thick,mydarkblue,shorten <=0.5,shorten >=1]
+\tikzset{ % node styles, numbered for easy mapping with \nstyle
+  node 1/.style={node in},
+  node 2/.style={node hidden},
+  node 3/.style={node out},
+}
+\def\nstyle{int(\lay<\Nnodlen?min(2,\lay):3)} % map layer number onto 1, 2, or 3
+
+% Jesse's Settings
+\usepackage{xcolor}
+% \definecolor{mygray}{gray}{0.6}
+% \definecolor{myred}{HTML}{FF4136}
+% \definecolor{green}{HTML}{2ECC40}
+% \definecolor{orange}{HTML}{FF851B}
+% \definecolor{vectorPink}{HTML}{EB008B}
+\definecolor{C0}{HTML}{1f77b4}
+\definecolor{C1}{HTML}{ff7f0e}
+
+
+% Vector colors
+\definecolor{tangocolorvectorred}{HTML}{E40086}
+\definecolor{tangocolorvectorblue}{HTML}{014171}
+% \definecolor{tangocolorvectorpurple}{HTML}{602669}
+\definecolor{tangocolorvectorpurple}{HTML}{861e80}
+\definecolor{tangocolorvectorlightblue}{HTML}{4C6379}
+\definecolor{tangocolorvectordarkblue}{HTML}{07223E}
+
+% NYU & Flatiron
+\definecolor{FlatironOrange2}{HTML}{f5862d}
+
+
+% tango plum 
+\definecolor{tangocolordarkplum}{HTML}{5C3566}
+\definecolor{tangocolormediumplum}{HTML}{75507B}
+\definecolor{tangocolorlightplum}{HTML}{AD7FA8}
+
+% scarlet red
+\definecolor{tangocolordarkscarletred}{HTML}{A40000}
+\definecolor{tangocolormediumscarletred}{HTML}{CC0000}
+\definecolor{tangocolorlightscarletred}{HTML}{EF2929}
+
+% aluminium
+\definecolor{tangocolordarkaluminium}{HTML}{BABDB6}
+\definecolor{tangocolormediumaluminium}{HTML}{D3D3D3}
+\definecolor{tangocolorlightaluminium}{HTML}{FFFFFF}
+
+% gray
+\definecolor{tangocolorlightgray}{HTML}{888A85}
+
+% Nogizaka 46
+\definecolor{purple}{HTML}{8B1C8B}
+\definecolor{dark_purple}{HTML}{550055}
+\definecolor{light_purple}{HTML}{FBF5FF} 
+
+\usepackage{setspace}
+% \usepackage{tikz}
+% \usepackage{tkz-graph}
+% \usetikzlibrary{shapes}
+% \usetikzlibrary{arrows}
+% \usetikzlibrary{positioning}
+\usepackage{array}
+\usepackage{subcaption}
+\captionsetup{compatibility=false}
+\usepackage{multirow}
+\usepackage{changepage}
+% \usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{wasysym}
+\usepackage{pifont}
+\usepackage{algorithmic}
+\usepackage[ruled]{algorithm2e}
+
+\setcounter{algocf}{0}
+\renewcommand{\thealgocf}{} 
+
+
+\setlength{\leftmargini}{10pt}
+
+
+%---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+% color schemes
+ 
+\usecolortheme{orchid} 
+% \usecolortheme{seahorse} % to have colored blocks
+
+% Change standard block colors
+
+% 1- Block title (background and text) 
+% \setbeamercolor{block title}{bg=vectorBlue!24, fg=black}
+\setbeamercolor{block body}{bg=vectorBlue!8, fg=black}
+
+% % Change alert block colors 
+% 1- Block title (background and text)
+\setbeamercolor{block title alerted}{fg=white, bg=FlatironOrange}
+
+% 2- Block body (background)
+% \setbeamercolor{block body alerted}{bg=vectorBlue!7, fg=black}
+
+\setbeamertemplate{blocks}[rounded][shadow=true]
+
+\makeatletter
+\def\th@mystyle{%
+    \it % body font
+    \setbeamercolor{block title example}{bg=vectorBlue!24, fg=black}
+    \setbeamercolor{block body example}{bg=vectorBlue!8, fg=black}
+    \def\inserttheoremblockenv{exampleblock}
+  }
+\makeatother
+\theoremstyle{mystyle}
+\newtheorem*{conjecture}{Conjecture}
+\newtheorem*{newlemma}{Lemma} 
+\newtheorem*{newproposition}{Proposition} 
+
+
+
+\usepackage{tcolorbox}% http://ctan.org/pkg/tcolorbox
+\makeatletter
+\newcommand{\redbox}[1]{%
+%   \setbox0=\hbox{#1}%
+%   \setlength{\@tempdima}{\dimexpr\wd0+13pt}%
+  \begin{tcbox}[on line, 
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=red!15,colback=red!15, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\newcommand{\bluebox}[1]{%
+%   \setbox0=\hbox{#1}%
+%   \setlength{\@tempdima}{\dimexpr\wd0+13pt}%
+  \begin{tcbox}[on line, 
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=blue!15,colback=blue!15, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\newcommand{\tealbox}[1]{%
+%   \setbox0=\hbox{#1}%
+%   \setlength{\@tempdima}{\dimexpr\wd0+13pt}%
+  \begin{tcbox}[on line, 
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=teal!15,colback=teal!15, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\newcommand{\orangebox}[1]{%
+%   \setbox0=\hbox{#1}%
+%   \setlength{\@tempdima}{\dimexpr\wd0+13pt}%
+  \begin{tcbox}[on line, 
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=orange!14,colback=orange!14, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\makeatother
+%---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+% \setbeamercolor{alerted text}{fg=orange}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath,amssymb}
+\usepackage[ruled]{algorithm2e}
+\input{_macros} 
+
+\usepackage[makeroom,thicklines]{cancel}
+\newcommand{\highlight}[1]{{\color{tangocolorvectorpurple}\textbf{\emph{#1}}}}
+\newcommand{\p}{\vspace{\baselineskip}}
+\newcommand{\np}{\vspace{-0.5\baselineskip}}
+
+\usepackage{etoolbox}
+\newcommand{\zerodisplayskips}{%
+  \setlength{\abovedisplayskip}{2.5pt}%
+  \setlength{\belowdisplayskip}{2.5pt}%
+  \setlength{\abovedisplayshortskip}{0pt}%
+  \setlength{\belowdisplayshortskip}{0pt}}
+\appto{\normalsize}{\zerodisplayskips}
+\appto{\small}{\zerodisplayskips}
+\appto{\footnotesize}{\zerodisplayskips}
+
+
+\newcounter{beamerpausessave}
+\newcommand{\always}[1]{\setcounter{beamerpausessave}{\value{beamerpauses}}
+    \setcounter{beamerpauses}{0}\pause #1 
+    \setcounter{beamerpauses}{\value{beamerpausessave}}\addtocounter{beamerpauses}{-1}\pause}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\input{title}
+
+\begin{document}
+
+
+\begin{frame}
+\vspace{0.2cm} 
+\titlepage % Print the title page as the first slide
+
+\end{frame}
+
+% \input{photos}
+
+\input{intro}
+\input{results}
+% \input{conclusion}
+
+\input{reference}
+% \input{appendix}
+
+
+\end{document}

@@ -1,0 +1,534 @@
+\documentclass[11pt]{article}
+
+% --------- packages ---------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --------- listings style ---------
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black}\bfseries,
+  stringstyle=\color{green!40!black},
+  commentstyle=\color{gray!70},
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  breaklines=true,
+  tabsize=2
+}
+\lstset{style=py}
+
+% --------- theorem styles ---------
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+
+% --------- macros ---------
+\DeclareMathOperator{\Tr}{Tr}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\fro}{\mathrm{F}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\sr}{\mathrm{sr}}
+\newcommand{\sgn}{\mathrm{sign}}
+\newcommand{\msgn}{\mathrm{msign}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+
+% =========================================================
+\begin{document}
+
+\begin{center}
+{\LARGE \bf Muon vs.\ Spectral Scaling: A One-Step Feature Dynamics View}\\[6pt]
+{\large \emph{(with a Toy Transformer Variant under Zipf Token Frequencies)}}
+\end{center}
+
+\vspace{0.5em}
+
+\begin{abstract}
+We study one-step feature changes induced by (i) gradient descent (GD) with the default layerwise spectral scaling from the paper under discussion, and (ii) the Muon (matrix-sign/polar) update. Under mild conditions (power-law teacher spectrum with exponent $>\tfrac12$, bounded feature variances), GD induces an $O(1)$ feature root-mean-square (RMS) change that is \emph{uniform} in width $n$ and batch size $B$. In contrast, Muon induces an RMS change of order $\Theta(\sqrt{r_{\mathrm{eff}}})$, where $r_{\mathrm{eff}}=\min\{n,B\}$ in the basic linear model and $r_{\mathrm{eff}}=\min\{n,D_B\}$ in a toy transformer with Zipf token frequencies ($D_B$ = \#distinct tokens in batch). This yields a clear \emph{knee}: $\sqrt{n}$ growth when width is the bottleneck and a plateau at $\sqrt{B}$ (or $\sqrt{D_B}$) when effective rank saturates. We argue this scaling gap makes Muon \emph{incompatible} with spectral scaling if the goal is width-invariant feature motion, and we formalize the conditions under which the incompatibility arises.
+\end{abstract}
+
+% =========================================================
+\section{Setup and metric}
+
+We analyze a single update of a square layer $W\in\R^{n\times n}$ under a squared-loss regression task. Let $X\in\R^{B\times n}$ be a mini-batch with i.i.d.\ rows $\mathcal{N}(0,I_n)$, and let the teacher $W_\star\in\R^{n\times n}$ be fixed and independent of $X$ with singular values following a power law:
+\begin{assumption}[Teacher spectrum]\label{ass:teacher}
+There exist orthonormal $U_\star,V_\star$ and $s_i=i^{-\alpha}$ with $\alpha>\tfrac12$ such that
+$W_\star=U_\star\,\mathrm{diag}(s_1,\dots,s_n)\,V_\star^\top$.
+\end{assumption}
+
+We predict $\hat Y=XW$ and take targets $Y=XW_\star$. The loss is
+\[
+L(W)=\frac{1}{2B}\,\norm{XW-Y}_\fro^2.
+\]
+At $W=0$ the gradient is
+\begin{equation}\label{eq:G}
+G:=\nabla L(0) \;=\; -\frac1B X^\top X\, W_\star.
+\end{equation}
+
+\paragraph{Default GD spectral scaling (square).} For a square layer, the default spectral scaling reduces to a constant layerwise learning rate; we therefore take a \emph{plain} GD step
+\begin{equation}\label{eq:GDstep}
+\Delta W_{\mathrm{GD}} = -\eta_0\, G, \qquad \eta_0=\Theta(1).
+\end{equation}
+
+\paragraph{Muon (matrix sign / polar).} Let $G=U\Sigma V^\top$ be a thin SVD, and define the rank-aware matrix sign
+\begin{equation}\label{eq:Muon}
+(G):=U_r V_r^\top \quad\text{with}\quad r=\mathrm{rank}(G).
+\end{equation}
+The Muon step is
+\begin{equation}\label{eq:Muonstep}
+\Delta W_\mu = -\eta_0\,\msgn(G).
+\end{equation}
+
+\paragraph{Feature RMS metric.} For isotropic test features $h\sim\mathcal N(0,I_n)$ define
+\[
+\mathrm{RMS}(\Delta W)\;:=\;\sqrt{\E \norm{\Delta W h}_2^2}.
+\]
+We use the standard trace identity $\E\norm{Ah}_2^2=\Tr(A A^\top)=\norm{A}_\fro^2$, hence
+\begin{equation}\label{eq:RMS}
+\mathrm{RMS}(\Delta W) \;=\; \norm{\Delta W}_\fro.
+\end{equation}
+
+We will repeatedly use that the (numerical) rank of $X$ is $\min\{n,B\}$ a.s.\ for Gaussian $X$.
+
+% =========================================================
+\section{Main results for the linear model}
+
+\begin{lemma}[Rank of the one-step gradient]\label{lem:rankG}
+Under \eqref{eq:G} with full-rank $W_\star$, $\mathrm{rank}(G)=\mathrm{rank}(X)=r_{\mathrm{eff}}$, where
+\[
+r_{\mathrm{eff}} := \min\{n,B\}.
+\]
+\end{lemma}
+
+\begin{proof}
+$\mathrm{rank}(G)\le \min\{\mathrm{rank}(X^\top X),\mathrm{rank}(W_\star)\} \le \min\{\mathrm{rank}(X),n\}=\mathrm{rank}(X)$. For Gaussian $X$, $\mathrm{rank}(X)=\min\{n,B\}$ almost surely; with full-rank $W_\star$ the bound is tight.
+\end{proof}
+
+\begin{lemma}[Frobenius control of $G$]\label{lem:GFbound}
+Let $S:=(1/B)X^\top X$. Then $G=-S W_\star$ and
+\[
+\norm{G}_\fro^2 = \Tr(W_\star^\top S^2 W_\star)\le \norm{S}_\op^2\, \norm{W_\star}_\fro^2.
+\]
+Moreover, for Gaussian $X$, $\norm{S}_\op \le C$ with high probability uniformly in $n,B$ when $n/B$ is bounded, and by Assumption~\ref{ass:teacher}, $\norm{W_\star}_\fro^2=\sum_{i=1}^n s_i^2=\sum_{i=1}^\infty i^{-2\alpha}<\infty$.
+\end{lemma}
+
+\begin{proof}
+The equality follows from cyclicity of trace. The inequality uses $\Tr(A^\top M A)\le \norm{M}_\op \Tr(A^\top A)$ for $M\succeq 0$. For Gaussian $X$, $S$ is Wishart; standard bounds yield $\norm{S}_\op \le (1+\sqrt{n/B})^2+o(1)$ w.h.p., hence bounded when $n/B$ is bounded. The last claim uses $\alpha>\tfrac12$.
+\end{proof}
+
+\begin{theorem}[GD feature RMS is $O(1)$]\label{thm:GD}
+Under Assumption~\ref{ass:teacher}, with the GD step \eqref{eq:GDstep},
+\[
+\mathrm{RMS}(\Delta W_{\mathrm{GD}}) \;=\; \eta_0\, \norm{G}_\fro \;=\; \Theta(1),
+\]
+uniformly in $n$ and $B$ (when $n/B$ is bounded).
+\end{theorem}
+
+\begin{proof}
+By \eqref{eq:RMS} and \eqref{eq:GDstep}, $\mathrm{RMS}=\eta_0 \norm{G}_\fro$. Lemma~\ref{lem:GFbound} implies $\norm{G}_\fro\le \norm{S}_\op \,\norm{W_\star}_\fro \le C\cdot \sqrt{\sum_i s_i^2}$ w.h.p., which is a constant by $\alpha>\tfrac12$.
+\end{proof}
+
+\begin{theorem}[Muon feature RMS scales as $\sqrt{r_{\mathrm{eff}}}$]\label{thm:Muon}
+With the Muon step \eqref{eq:Muonstep} and Lemma~\ref{lem:rankG},
+\[
+\mathrm{RMS}(\Delta W_\mu) \;=\; \eta_0\, \norm{\msgn(G)}_\fro \;=\; \eta_0\, \sqrt{\mathrm{rank}(G)} \;=\; \eta_0\, \sqrt{r_{\mathrm{eff}}}\;=\;\eta_0\, \sqrt{\min\{n,B\}}.
+\]
+\end{theorem}
+
+\begin{proof}
+$\msgn(G)$ has exactly $r_{\mathrm{eff}}$ singular values equal to $1$ and the rest $0$; hence $\norm{\msgn(G)}_\fro^2=r_{\mathrm{eff}}$.
+\end{proof}
+
+\begin{corollary}[Knee and regimes]\label{cor:knee}
+As a function of $n$ (for fixed $B$), Muon exhibits
+\[
+\mathrm{RMS}(\Delta W_\mu)=
+\begin{cases}
+\Theta(\sqrt{n}), & n\le B,\\
+\Theta(\sqrt{B}), & n\ge B,
+\end{cases}
+\quad \text{while}\quad
+\mathrm{RMS}(\Delta W_{\mathrm{GD}})=\Theta(1).
+\]
+Thus a knee occurs near $n\approx B$, with a width-limited growth phase and a rank-limited plateau.
+\end{corollary}
+
+\begin{remark}[Stable-rank view]
+Under \eqref{eq:RMS}, $\mathrm{RMS}^2=\norm{\Delta W}_\fro^2=\sr(\Delta W)\cdot \norm{\Delta W}_\op^2$. GD is calibrated to keep $\norm{\Delta W}_\op=\Theta(1)$ \emph{and} $\sr(\Delta W)=\Theta(1)$ (by $\alpha>\tfrac12$), hence $\mathrm{RMS}=\Theta(1)$. Muon forces $\norm{\Delta W}_\op=\Theta(1)$ but sets $\sr(\Delta W)=\mathrm{rank}(G)=r_{\mathrm{eff}}$, hence $\mathrm{RMS}=\Theta(\sqrt{r_{\mathrm{eff}}})$.
+\end{remark}
+
+% =========================================================
+% =========================================================
+\section{Toy transformer with decoupled vocab and width}
+
+We now decouple the vocabulary size $V$ and the width $n$. The teacher is a fixed linear map $T\in\mathbb{R}^{V\times V}$ (independent of $n$), while the model embeds one-hot tokens into $\mathbb{R}^n$, applies a trainable middle layer $W\in\mathbb{R}^{n\times n}$, then unembeds back to logits.
+
+\subsection*{Model}
+Let a token $t\in\{1,\dots,V\}$ be represented by $x=e_t\in\mathbb{R}^V$ (one-hot). Let $E\in\mathbb{R}^{n\times V}$ be the embedding, $U^\top\in\mathbb{R}^{V\times n}$ the unembedding, and
+\[
+\hat y \;=\; U^\top W E x,\qquad y \;=\; T x,\qquad T\in\mathbb{R}^{V\times V}\ \ \text{fixed (independent of $n$)}.
+\]
+We linearize the loss on logits:
+\[
+L(W)\;=\;\frac{1}{2B}\sum_{b=1}^B \big\|U^\top W E x_b - T x_b\big\|_2^2.
+\]
+At $W=0$,
+\begin{equation}\label{eq:Gx-decoupled}
+G \;=\; -\,\frac1B \sum_{b=1}^B U\, \big(T x_b\big)\, \big(E x_b\big)^\top
+\;=\; -\,\frac1B \sum_{t\in \mathcal{S}} \sum_{b:\,x_b=e_t} U\,\big(T e_t\big)\,\big(E e_t\big)^\top,
+\end{equation}
+where $\mathcal{S}\subseteq[V]$ is the set of distinct tokens seen in the batch.
+
+\paragraph{Assumptions (well-conditioned embeddings).}
+We assume:
+\begin{enumerate}[left=1.3em, itemsep=2pt, topsep=2pt]
+\item \textbf{Teacher spectrum:} $T=Q\,\mathrm{diag}(\tau_1,\dots,\tau_V)\,R^\top$ with $\tau_i=i^{-\alpha}$, $\alpha>\tfrac12$ (so $\|T\|_F^2=\sum_i \tau_i^2<\infty$ as $V$ grows).
+\item \textbf{Unembedding rows orthonormal:} $U U^\top = I_n$ (so $\|U\|_{\op}=1$).
+\item \textbf{Embedding columns normalized:} $\|E e_t\|_2=1$ for all $t$ (no $n$-dependent blow-up).
+\end{enumerate}
+
+\begin{proposition}[Rank via distinct tokens and width]\label{prop:rankToy-decoupled}
+Let $D_B:=|\mathcal{S}|$ be the number of distinct tokens in the batch and $r_T:=\mathrm{rank}(T)$. Then
+\[
+\mathrm{rank}(G)\ \le\ \min\{\,n,\ D_B,\ r_T\,\}.
+\]
+Generically (random $E,U$ with the properties above and full-rank $T$), $\mathrm{rank}(G)=\min\{n,D_B\}$.
+\end{proposition}
+
+\begin{proof}
+Each summand in \eqref{eq:Gx-decoupled} is rank one. There are at most $D_B$ distinct token types, the left factor lives in $\mathrm{span}(U)\subseteq\mathbb{R}^n$, and $\mathrm{rank}(T)=r_T$ bounds the number of independent $T e_t$’s. Hence the stated bound. Genericity gives equality.
+\end{proof}
+
+\begin{lemma}[Frobenius control of $G$]\label{lem:GFbound-decoupled}
+Under the assumptions above,
+\[
+\|G\|_F \;\le\; \frac1B \sum_{b=1}^B \|U\|_{\op}\,\|T e_{t_b}\|_2\,\|E e_{t_b}\|_2
+\;\le\; \max_{t}\|T e_t\|_2
+\;\le\; \|T\|_F,
+\]
+hence $\|G\|_F = O(1)$ uniformly in $n,B$ (and bounded in $V$ thanks to $\alpha>\tfrac12$).
+\end{lemma}
+
+\begin{theorem}[GD feature RMS remains $O(1)$]\label{thm:GD-decoupled}
+With $\Delta W_{\mathrm{GD}}=-\eta_0 G$ and $\eta_0=\Theta(1)$,
+\[
+\mathrm{RMS}(\Delta W_{\mathrm{GD}})=\|\Delta W_{\mathrm{GD}}\|_F=\eta_0\|G\|_F=\Theta(1),
+\]
+uniformly in $n$ and $B$.
+\end{theorem}
+
+\begin{theorem}[Muon feature RMS tracks $\sqrt{\min\{n,D_B\}}$]\label{thm:Muon-decoupled}
+Let $\Delta W_\mu=-\eta_0\,\mathrm{sign}(G)$ with the rank-aware sign ($U_rV_r^\top$). Then
+\[
+\mathrm{RMS}(\Delta W_\mu)=\|\Delta W_\mu\|_F=\eta_0\sqrt{\mathrm{rank}(G)}
+=\eta_0\sqrt{\min\{n,D_B,r_T\}}
+\stackrel{\text{full-rank }T}{=}\eta_0\sqrt{\min\{n,D_B\}}.
+\]
+\end{theorem}
+
+\begin{corollary}[Knee and regimes (decoupled case)]\label{cor:knee-decoupled}
+For fixed $B$ and $V$, as $n$ increases,
+\[
+\mathrm{RMS}(\Delta W_\mu)=
+\begin{cases}
+\Theta(\sqrt{n}), & n \le D_B,\\
+\Theta(\sqrt{D_B}), & n \ge D_B,
+\end{cases}
+\qquad
+\mathrm{RMS}(\Delta W_{\mathrm{GD}})=\Theta(1).
+\]
+Under Zipf token frequencies ($\mathbb{P}(t=i)\propto i^{-s}$, $s>1$), $D_B$ grows sublinearly in $B$, so the plateau occurs at $\sqrt{D_B}$, independent of $n$.
+\end{corollary}
+
+
+% =========================================================
+\section{Why Muon conflicts with spectral scaling (precisely)}
+
+The default spectral scaling aims for \emph{width-invariant} feature motion. Theorems~\ref{thm:GD} and \ref{thm:Muon} imply GD respects this (RMS $=\Theta(1)$), while Muon induces $\mathrm{RMS}=\Theta(\sqrt{r_{\mathrm{eff}}})$. Equivalently, Muon hard-codes $\sr(\Delta W_\mu)=r_{\mathrm{eff}}$, whereas spectral scaling implicitly targets $\sr(\Delta W)=O(1)$. Unless one \emph{also} rescales Muon by $1/\sqrt{r_{\mathrm{eff}}}$ (which defeats its geometry), the two philosophies are incompatible.
+
+\paragraph{Practical prediction.} In regimes where $r_{\mathrm{eff}}$ grows across depth (e.g.\ many distinct tokens per batch early layers, or large $B$), Muon induces systematically larger feature displacements than GD; without compensating mechanisms, this can cause layerwise imbalance and instability relative to a spectrally scaled GD baseline.
+
+% =========================================================
+\section{Rectangular extension (brief)}
+
+For $W\in\R^{n_\mathrm{out}\times n_\mathrm{in}}$, the default scaling introduces the width factor $\sqrt{n_\mathrm{out}/n_\mathrm{in}}$ in the target update operator size. Repeating the proofs with $h\sim\mathcal N(0,I_{n_\mathrm{in}})$ yields
+\[
+\mathrm{RMS}(\Delta W_{\mathrm{GD}})=\Theta(1) \quad\text{and}\quad
+\mathrm{RMS}(\Delta W_\mu)=\Theta\!\Big(\sqrt{\min\{n_\mathrm{out},\,r_{\mathrm{data}}\}}\Big),
+\]
+with the same incompatibility whenever $r_{\mathrm{eff}}$ grows.
+
+% =========================================================
+\appendix
+\section*{Appendix: Reproducible Code (NumPy)}
+
+\paragraph{Dependencies.} Python 3.9+, \texttt{numpy}, \texttt{matplotlib}. Run any block as a standalone script (\texttt{python script.py}). Plots reproduce the figures discussed in the text. All code uses the default GD scaling (constant layer LR for square layers) and a \emph{rank-aware} Muon sign ($U_rV_r^\top$).
+
+\subsection*{A. Linear model: GD (default) vs Muon (rank-aware)}
+
+\begin{lstlisting}[language=Python,caption={Linear model: one-step RMS scaling vs width and batch size.}]
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---------- helpers ----------
+def orthonormal_matrix(n, rng):
+    Q, _ = np.linalg.qr(rng.standard_normal((n, n)))
+    if np.linalg.det(Q) < 0: Q[:, 0] *= -1
+    return Q
+
+def num_rank(A, tol=None):
+    s = np.linalg.svd(A, compute_uv=False)
+    if s.size == 0: return 0
+    if tol is None: tol = max(A.shape) * np.finfo(A.dtype).eps * s[0]
+    return int(np.sum(s > tol))
+
+def matrix_sign_rankaware(G, tol=None):
+    U, s, Vt = np.linalg.svd(G, full_matrices=False)
+    if s.size == 0 or s[0] == 0: return np.zeros_like(G), 0
+    if tol is None: tol = max(G.shape) * np.finfo(G.dtype).eps * s[0]
+    r = int(np.sum(s > tol))
+    if r == 0: return np.zeros_like(G), 0
+    return U[:, :r] @ Vt[:r, :], r
+
+# ---------- teacher and gradient ----------
+def make_teacher(n, alpha=0.7, seed=0):
+    rng = np.random.default_rng(seed)
+    U = orthonormal_matrix(n, rng)
+    V = orthonormal_matrix(n, rng)
+    s = (np.arange(1, n+1, dtype=float)) ** (-alpha)
+    return U @ np.diag(s) @ V.T
+
+def grad_at_zero(X, W_star):
+    B = X.shape[0]
+    return -(X.T @ (X @ W_star)) / B
+
+# ---------- updates and metric ----------
+def gd_update(G, eta0=1.0):       # default scaling for square layer
+    return -eta0 * G
+
+def muon_update(G, eta0=1.0):
+    Q, r = matrix_sign_rankaware(G)
+    return -eta0 * Q, r
+
+def rms_feature_delta(dW):
+    return np.linalg.norm(dW, 'fro')
+
+# ---------- experiment ----------
+def one_step_rms(n, B, alpha=0.7, teacher_seed=0, data_seed=1, eta0=1.0):
+    rng = np.random.default_rng(data_seed + n*1009 + B*97)
+    X = rng.standard_normal((B, n))
+    W_star = make_teacher(n, alpha=alpha, seed=teacher_seed)
+    G = grad_at_zero(X, W_star)
+    dW_gd = gd_update(G, eta0)
+    dW_mu, r_eff = muon_update(G, eta0)
+    return rms_feature_delta(dW_gd), rms_feature_delta(dW_mu), r_eff
+
+def sweep_vs_n(n_list, B_list, trials=5, **kw):
+    out = {}
+    for B in B_list:
+        gd_m, mu_m, r_m = [], [], []
+        for n in n_list:
+            gvals, mvals, rvals = [], [], []
+            for t in range(trials):
+                g, m, r = one_step_rms(n, B, **kw, data_seed=17+t)
+                gvals.append(g); mvals.append(m); rvals.append(r)
+            gd_m.append(np.mean(gvals)); mu_m.append(np.mean(mvals)); r_m.append(np.mean(rvals))
+        out[B] = (np.array(gd_m), np.array(mu_m), np.array(r_m))
+    return out
+
+def sweep_vs_B(B_list, n_list, trials=5, **kw):
+    out = {}
+    for n in n_list:
+        gd_m, mu_m, r_m = [], [], []
+        for B in B_list:
+            gvals, mvals, rvals = [], [], []
+            for t in range(trials):
+                g, m, r = one_step_rms(n, B, **kw, data_seed=23+t)
+                gvals.append(g); mvals.append(m); rvals.append(r)
+            gd_m.append(np.mean(gvals)); mu_m.append(np.mean(mvals)); r_m.append(np.mean(rvals))
+        out[n] = (np.array(gd_m), np.array(mu_m), np.array(r_m))
+    return out
+
+def plot_vs_n(n_list, res, title):
+    plt.figure(figsize=(7.5,5))
+    for B, (gd, mu, rbar) in res.items():
+        plt.plot(n_list, gd, 'o-', label=f"GD (B={B})")
+        plt.plot(n_list, mu, 'x-', label=f"Muon (B={B})")
+    plt.xlabel("width n"); plt.ylabel("RMS ||Δh||"); plt.title(title)
+    plt.legend(); plt.tight_layout(); plt.show()
+
+def plot_vs_B(B_list, res, title):
+    plt.figure(figsize=(7.5,5))
+    for n, (gd, mu, rbar) in res.items():
+        plt.plot(B_list, gd, 'o-', label=f"GD (n={n})")
+        plt.plot(B_list, mu, 'x-', label=f"Muon (n={n})")
+    plt.xlabel("batch size B"); plt.ylabel("RMS ||Δh||"); plt.title(title)
+    plt.legend(); plt.tight_layout(); plt.show()
+
+if __name__ == "__main__":
+    alpha, eta0, trials = 0.7, 1.0, 5
+    n_list = [128, 192, 256, 384, 512, 768, 1024]
+    B_list = [256, 1024]
+    res_n = sweep_vs_n(n_list, B_list, trials=trials, alpha=alpha, teacher_seed=0, eta0=eta0)
+    plot_vs_n(n_list, res_n, f"Linear model: RMS vs n (trials={trials})")
+
+    B_sweep = [128, 256, 384, 512, 768, 1024, 1536]
+    n_fixed = [256, 512, 1024]
+    res_B = sweep_vs_B(B_sweep, n_fixed, trials=trials, alpha=alpha, teacher_seed=0, eta0=eta0)
+    plot_vs_B(B_sweep, res_B, f"Linear model: RMS vs B (trials={trials})")
+\end{lstlisting}
+
+\subsection*{B. Toy transformer (one-hot, embedding/unembedding, Zipf tokens)}
+
+
+\begin{lstlisting}
+# === Toy transformer, decoupled V and n ===
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ----- helpers -----
+def orthonormal_rows(n, V, rng):
+    # Return U in R^{n x V} with U U^T = I_n (orthonormal rows)
+    A = rng.standard_normal((V, n))
+    Q, _ = np.linalg.qr(A)           # V x n with orthonormal columns
+    return Q.T                       # n x V, rows orthonormal
+
+def unitnorm_columns(n, V, rng):
+    E = rng.standard_normal((n, V))
+    E /= np.linalg.norm(E, axis=0, keepdims=True) + 1e-12
+    return E
+
+def build_teacher_T(V, alpha=0.7, rng=None):
+    if rng is None: rng = np.random.default_rng(0)
+    Uv, _ = np.linalg.qr(rng.standard_normal((V, V)))
+    Vv, _ = np.linalg.qr(rng.standard_normal((V, V)))
+    s = (np.arange(1, V+1, dtype=float)) ** (-alpha)
+    return Uv @ np.diag(s) @ Vv.T    # V x V
+
+def sample_tokens_zipf(B, V, s, rng):
+    i = np.arange(1, V+1, dtype=float)
+    p = i ** (-s); p /= p.sum()
+    return rng.choice(V, size=B, replace=True, p=p)
+
+# ----- gradient wrt middle layer at W=0 -----
+def grad_middle_at_zero(E, U, T, tokens):
+    # G = -(1/B) sum_t U (T e_t) (E e_t)^T
+    B = len(tokens); n, V = E.shape
+    G = np.zeros((n, n))
+    for t in tokens:
+        y_t = T[:, t:t+1]    # V x 1
+        h_t = E[:, t:t+1]    # n x 1  (unit norm)
+        G += (U @ y_t) @ h_t.T
+    G *= -(1.0 / B)
+    return G
+
+# ----- updates and metric -----
+def gd_update(G, eta0=1.0):   return -eta0 * G
+
+def sign_rankaware(G):
+    U, s, Vt = np.linalg.svd(G, full_matrices=False)
+    if s.size == 0 or s[0] == 0: return np.zeros_like(G), 0
+    tol = max(G.shape) * np.finfo(G.dtype).eps * s[0]
+    r = int(np.sum(s > tol))
+    if r == 0: return np.zeros_like(G), 0
+    return U[:, :r] @ Vt[:r, :], r
+
+def muon_update(G, eta0=1.0):
+    Q, r = sign_rankaware(G)
+    return -eta0 * Q, r
+
+def fro(dW): return np.linalg.norm(dW, 'fro')
+
+# ----- one run -----
+def one_step_rms_transformer(n, V, B, alpha_T=0.7, zipf_s=1.2, eta0=1.0, seed=0):
+    rng = np.random.default_rng(seed)
+    U = orthonormal_rows(n, V, rng)      # n x V, UU^T = I
+    E = unitnorm_columns(n, V, rng)      # n x V, unit columns
+    T = build_teacher_T(V, alpha=alpha_T, rng=rng)
+
+    tokens = sample_tokens_zipf(B, V, zipf_s, rng)   # 0..V-1
+    G = grad_middle_at_zero(E, U, T, tokens)
+    dW_gd = gd_update(G, eta0)
+    dW_mu, r_eff = muon_update(G, eta0)
+    D_B = len(np.unique(tokens))
+    return fro(dW_gd), fro(dW_mu), r_eff, D_B
+
+# ----- sweeps -----
+def sweep_vs_n(n_list, V, B, trials=5, **kw):
+    gd_m, mu_m, r_m, d_m = [], [], [], []
+    for n in n_list:
+        gvals, mvals, rvals, dvals = [], [], [], []
+        for t in range(trials):
+            g, m, r, d = one_step_rms_transformer(n, V, B, seed=123 + 37*t + 5*n + B, **kw)
+            gvals.append(g); mvals.append(m); rvals.append(r); dvals.append(d)
+        gd_m.append(np.mean(gvals)); mu_m.append(np.mean(mvals))
+        r_m.append(np.mean(rvals));  d_m.append(np.mean(dvals))
+    return np.array(gd_m), np.array(mu_m), np.array(r_m), np.array(d_m)
+
+def sweep_vs_B(B_list, n, V, trials=5, **kw):
+    gd_m, mu_m, r_m, d_m = [], [], [], []
+    for B in B_list:
+        gvals, mvals, rvals, dvals = [], [], [], []
+        for t in range(trials):
+            g, m, r, d = one_step_rms_transformer(n, V, B, seed=321 + 41*t + 7*n + B, **kw)
+            gvals.append(g); mvals.append(m); rvals.append(r); dvals.append(d)
+        gd_m.append(np.mean(gvals)); mu_m.append(np.mean(mvals))
+        r_m.append(np.mean(rvals));  d_m.append(np.mean(dvals))
+    return np.array(gd_m), np.array(mu_m), np.array(r_m), np.array(d_m)
+
+# ----- plotting helpers -----
+def plot_vs_n(n_list, gd, mu, title):
+    plt.figure(figsize=(7.2,5))
+    plt.plot(n_list, gd, 'o-', label='GD')
+    plt.plot(n_list, mu, 'x-', label='Muon')
+    plt.xlabel('width n'); plt.ylabel('RMS ||Δh||'); plt.title(title)
+    plt.legend(); plt.tight_layout(); plt.show()
+
+def plot_vs_B(B_list, gd, mu, title):
+    plt.figure(figsize=(7.2,5))
+    plt.plot(B_list, gd, 'o-', label='GD')
+    plt.plot(B_list, mu, 'x-', label='Muon')
+    plt.xlabel('batch size B'); plt.ylabel('RMS ||Δh||'); plt.title(title)
+    plt.legend(); plt.tight_layout(); plt.show()
+
+# ----- example usage -----
+if __name__ == "__main__":
+    # knobs
+    V       = 4096          # vocabulary size (independent of n)
+    alpha_T = 0.7           # teacher spectrum exponent (>1/2)
+    zipf_s  = 1.2           # Zipf token exponent (>1 typical)
+    eta0    = 1.0
+    trials  = 5
+
+    # sweep width (knee at n ~ min{V, D_B}; since V is large, knee is at D_B)
+    B  = 1024
+    n_list = [128, 192, 256, 384, 512, 768, 1024, 1536]
+    gd, mu, rbar, dbar = sweep_vs_n(n_list, V, B, trials=trials, alpha_T=alpha_T, zipf_s=zipf_s, eta0=eta0)
+    plot_vs_n(n_list, gd, mu, f"Toy Transformer (V={V}, B={B})")
+
+    # sweep batch (knee where D_B ~ n; plateau at sqrt(min{n, V, r_T})=sqrt(min{n, D_B}))
+    n  = 512
+    B_list = [128, 256, 384, 512, 768, 1024, 1536, 2048]
+    gdB, muB, rbarB, dbarB = sweep_vs_B(B_list, n, V, trials=trials, alpha_T=alpha_T, zipf_s=zipf_s, eta0=eta0)
+    plot_vs_B(B_list, gdB, muB, f"Toy Transformer (V={V}, n={n})")
+\end{lstlisting}
+
+\paragraph{Notes.} (i) The Muon step uses a \emph{rank-aware} sign; omitting the truncation ($U_rV_r^\top$) causes $\|\Delta W_\mu\|_\fro=\sqrt{n}$, hiding the $B$ (or $D_B$) dependence. (ii) For smoother curves, increase \texttt{trials}. (iii) To normalize by feature norm, divide RMS by $\sqrt{n}$ when desired.
+
+\end{document}

@@ -1,0 +1,383 @@
+\documentclass{beamer}
+
+% Theme settings
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}  % Remove navigation symbols
+
+% Packages
+\usepackage{amsmath, amssymb}     % Math packages
+\usepackage{mathtools}            % Enhanced math tools
+\usepackage{bm}                   % Bold math symbols
+\usepackage{tikz}                 % For diagrams
+\usetikzlibrary{arrows.meta, positioning} % TikZ libraries
+\usepackage{hyperref}             % Hyperlinks
+\usepackage{physics}
+\usepackage{stmaryrd}
+
+\usepackage[
+  backend=biber,
+  style=authoryear, % or style=alphabetic, style=numeric, etc.
+  citestyle=authoryear % controls the in-text citation style
+]{biblatex}
+\addbibresource{refs.bib} % adjust filename as needed
+
+
+\newcommand{\dblbraket}[2]{\langle\langle #1 \vert #2 \rangle\rangle}
+\newcommand{\inner}[2]{\left\langle #1, #2 \right\rangle}
+\newcommand{\ol}[1]{\overline{#1}}
+\newcommand{\DW}[1]{\textcolor{violet}{\bf (DW: #1)}}
+\renewcommand{\NG}[1]{\textcolor{blue}{\bf (NG: #1)}}
+\newcommand{\lr}{\mathsf{lr}}
+\newcommand{\MP}{\mathsf{MP}}
+\newcommand{\transfergap}{\mathsf{TSG}}
+\newcommand{\lossgap}{\mathsf{LSG}}
+\newcommand{\opt}{\mathsf{opt}}
+\newcommand{\Sbb}{\mathbb{S}}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\proj}{proj}
+\DeclareMathOperator{\SVD}{SVD}
+\DeclareMathOperator{\id}{id}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\hp}{\nu}       
+\newcommand{\loss}{\mathcal{L}}% Scalar hyperparameter
+\newcommand{\bx}{\bm{x}}
+\newcommand{\bh}{\bm{h}}
+\newcommand{\bw}{\bm{w}}
+\newcommand{\bg}{\bm{g}}
+\newcommand{\bW}{\bm{W}}
+\newcommand{\bG}{\bm{G}}
+\newcommand{\bU}{\bm{U}}
+\newcommand{\bhp}{\bm{\nu}}                       % Vector of hyperparameters
+\newcommand{\hpexp}{\gamma}                       % Scalar exponent
+\newcommand{\bhpexp}{\bm{\gamma}}                 % Vector of exponents
+\newcommand{\scaledhps}{\mathcal{H}}
+% Title info
+\title{Understanding the Mechanisms of Fast Hyperparameter Transfer}
+\author{Nikhil Ghosh, Denny Wu, Alberto Bietti}
+\date{\today}
+
+\begin{document}
+
+% Title frame
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Scaling}
+  \begin{figure}
+      \centering
+      \includegraphics[width=0.95\linewidth]{images/kaplan.jpg}
+      \caption{From Kaplan et al. 2020}
+  \end{figure}
+  Principled approaches: signals at small-scale  $\implies$ large scale behavior
+\end{frame}
+
+\begin{frame}{Scale-aware Hyperparameters}
+Parameterize training hyperparameters with scaling dimension $n$
+\[
+\scaledhps(\bhp, \bhpexp) = \{\hp_1 n^{\gamma_1}, \ldots, \hp_d n^{\gamma_d}\}
+\]
+
+\vspace{-1mm}
+
+\begin{itemize}
+    \item $\bhp = (\hp_1, \ldots, \hp_d)$ are the HPs
+
+    \vspace{2mm}
+    
+    \item $\bhpexp = (\gamma_1, \ldots, \gamma_d)$ are the scaling exponents
+\end{itemize}
+
+\vspace{6mm}
+
+Allows abstracting out the scale dependence of hyperparameters
+
+\vspace{4mm}
+
+Defines a sequence of trained models as $n \to \infty$
+\end{frame}
+
+\begin{frame}{Maximal Update Parameterization}
+For stochastic gradient descent (SGD) the HPs are the
+
+\vspace{2mm}
+
+\begin{enumerate}
+    \item initialization variances $\sigma^2_\ell$
+
+    \vspace{2mm}
+
+    \item learning rates $\eta^\ell$
+\end{enumerate}
+
+\vspace{4mm}
+
+Maximal update parameterization\footcite{yang2021tensor} ($\mu$P) is the unique scaling such that through training all network preactivations $\bh^\ell$ have entries $h^\ell_I$ that are
+
+\vspace{2mm}
+
+\begin{itemize}
+    \item stable: $h^\ell_i = O(1)$
+
+    \vspace{2mm}
+
+    \item updated maximally: $\Delta h^\ell_i = \Theta(1)$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{$\mu$P in Practice}
+    \begin{figure}
+        \centering
+    \includegraphics[width=0.95\linewidth]{images/muP.png}
+        \caption{From Yang et al. 2022}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{HP Transfer}
+Fix a scaling $\bhpexp$ and define:
+\[
+\loss_n(\bhp) = \text{final loss of a width-}n \text{ network trained with } \scaledhps(\bhp, \bhpexp)
+\]
+and the optimal width-$n$ HPs $\bhp^\star(n) =\argmin_{\bhp} \, \loss_n(\bhp)$ 
+
+\vspace{6mm}
+
+We can \emph{transfer} $\bhp^\star(n)$ to train a width $N \gg n$ model and achieve 
+\[
+    \loss_N(\bhp^\star(n)) \approx \loss_N(\bhp^\star(N))
+\]
+while spending a fraction of total-compute to find $\bhp^\star(n)$
+
+\end{frame}
+
+\begin{frame}{The Puzzle}
+In the limit as $n \to \infty$, both $\loss_n \to \loss_\infty$ and $\bhp^\star(n) \to \bhp^\star(\infty)$
+
+\vspace{6mm}
+
+If the convergence rates are
+\[
+\loss_n - \loss_\infty \sim n^{-\alpha} \quad \text{and} \quad
+\|\bhp^\star(n) - \bhp^\star(\infty)\| \sim n^{-\beta},
+\]
+then strong convexity of $\loss_\infty$ implies $\beta \geq \frac{\alpha}{2}$
+
+\vspace{6mm}
+
+Empirically, for instance in LLM pretraining, we see $\beta \gg \frac{\alpha}{2}$
+\end{frame}
+
+\begin{frame}{Slow Transfer}
+Fast transfer $\beta \gg \alpha / 2$ is not universal, it is problem dependent!
+
+\vspace{2mm}
+
+\begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{neurips_2025/figures/two_layer_ReLU_loss.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{neurips_2025/figures/two_layer_ReLU_rate.png}
+\end{minipage}
+
+For example, $\beta \approx \alpha / 2$ when training a 2-layer ReLU network on the norm indicator function: $\bx \sim \mathcal{N}(0, I_d)$, $y = \mathbb{I}(\norm{\bx} \geq c)$
+    
+\end{frame}
+
+\begin{frame}{Fast Transfer Thesis}
+\begin{block}{Thesis}
+    The convergence of $\bhp^\star(n)$ is determined by statistics of the training procedure which converge faster than $\loss_n$ as $n \to \infty$
+\end{block}
+
+\vspace{2mm}
+
+Intuitively ``high signal'' components of the optimization trajectory will
+
+\vspace{2mm}
+
+\begin{enumerate}
+    \item Converge quickly with $n$
+    \vspace{2mm}
+    \item Determine coarse-grained quantities like $\bhp^\star(n)$
+\end{enumerate}
+
+\vspace{2mm}
+
+How do we ``extract'' these components and relate them to $\bhp^\star(n)$ and $\loss_n$?
+\end{frame}
+
+\begin{frame}{Linearization}
+    Consider the linearization of the loss reduction
+    \[
+        \delta \phi(\bw_t) :=  \inner{\nabla \loss(\bw_t)}{\bw_{t+1} - \bw_t}.
+    \]
+    If the trajectory is sufficiently smooth, then the linearization is faithful
+    \[
+     \delta \phi(\bw_t) \approx \loss(\bw_{t+1}) - \loss(\bw_t) \text{ and } \phi := \sum\limits_{t=0}^{T-1} \delta \phi(\bw_t) \approx \loss(\bw_T) - \loss(\bw_0)
+    \]
+
+Using the exponential moving average (EMA) trajectory 
+
+\vspace{2mm}
+
+\begin{itemize}
+    \item The linearization is faithful
+
+    \vspace{2mm}
+    
+    \item The EMA performance matches original trajectory
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Linearization}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.95\linewidth]{neurips_2025/figures/EMA_ITERATE_LIN_dim=128_lr=0.004_ema=0.9995_seed=0_step_7185.pdf}
+    \caption{Llama network trained on WikiText103 using Adam.}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Linearization}
+
+\begin{minipage}{0.53\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{neurips_2025/figures/ema_adam_lr_step_4005.pdf}
+\end{minipage}
+\hfill
+\begin{minipage}{0.43\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{neurips_2025/figures/ema_adam_lr_0.004_step_4005_scaling_law.pdf}
+\end{minipage}
+
+\vspace{4mm}
+
+Linearization is faithful to the EMA trajectory which shows fast transfer.
+\end{frame}
+
+\begin{frame}{Decomposition}
+    Let $\bW \in \R^{m \times n}$ be a matrix parameter in the network at time $t$
+
+    \vspace{2mm}
+
+    Define $\bG := \nabla \loss(\bW_t)$ and $\delta \bW := \bW_{t+1} - \bW_t$ so that
+    \[
+        \delta \phi(\bW) = \inner{\bG}{\delta \bW} = \Tr(\bG^\top \cdot \delta\bW)
+    \]
+
+    Define the instantaneous top-$k$ loss reduction as 
+    \[
+        \delta \phi^k(\bW) := \max_{\bU_k} \Tr(\bU_k^\top [\bG \cdot \delta \bW] \bU_k)
+    \]
+    over $\bU_k \in \R^{n \times k}$ with orthonormal columns.
+
+    
+\end{frame}
+
+\begin{frame}{Decomposition}
+    Define the top-$k$ loss $\phi^k$ and the residual $\phi^{-k}$ as
+    \[
+        \phi^k := \sum\limits_{\ell \in [L]} \sum\limits_{t = 0}^{T-1} \delta \phi^k(\bW_t^{(\ell)}) \text{ and } \phi^{-k} := \phi - \phi^k.
+    \]
+
+    This defines a width $n$ top-$k$ loss curve $\phi_n^k(\bhp)$ and residual curve $\phi_n^{-k}(\bhp)$
+
+    \vspace{2mm}
+
+    \begin{block}{Conjecture}
+
+        There exists $k$ such that
+        \begin{enumerate}
+            \item $\phi_n^k \approx \phi_\infty^k$ (the top-components converge quickly)
+
+            \item $\argmin \phi_n^k \approx \argmin \phi_n$ (the top components determine $\bhp^\star(n)$)
+        \end{enumerate}
+    \end{block}
+    
+\end{frame}
+
+\begin{frame}{Structure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.95\linewidth]{neurips_2025/figures/split_loss_over_time_dim=128_lr=0.0048_ema=0.9995_seed=0_step_7185.pdf}
+    \caption{Top-$k$ shows invariance to width and benefit of width appears in residual.}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Fast Transfer}
+Consider a small width $n$ and a large target width $N$
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.55\linewidth]{neurips_2025/figures/ema_adam_lr_step_7185_dynamic_k.pdf}
+\end{figure}
+
+\vspace{-2mm}
+
+For each $n$ there exists $k(n)$ such that
+\[
+    \phi_n^k \approx \phi_N^k \text{ (top-left) and } \phi_n^{-k} \text{ (top-right)}, \phi_N^{-k} \text{ (bottom-right) are ``flat"}
+\]
+
+
+This implies that $\bhp^\star(n) \approx \bhp^\star(N)$ (bottom-left)
+    
+\end{frame}
+
+\begin{frame}{Other HPs}
+
+\begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/adam_beta1.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/adam_beta2.png}
+\end{minipage}
+
+\vspace{6mm}
+
+Similar fast-transfer behavior for Adam $\beta_1$, $\beta_2$ HPs    
+\end{frame}
+
+\begin{frame}{Vision Dataset}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.85\linewidth]{images/sgd_lr.png}
+    \caption{Top-$k$ decomposition for MLP trained on CIFAR-10 using SGD.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Conclusion}
+\begin{itemize}
+    \item HP transfer using $\mu$P is practically useful but not well understood
+
+    \vspace{4mm}
+
+    \item Effectiveness of transfer depends on problem structure
+
+    \vspace{4mm}
+
+    \item For Adam and SGD we provide evidence that transfer is linked to the low-dimensional nature of optimization dynamics 
+
+    \vspace{4mm}
+
+    \item Linearization of the EMA trajectory provides useful empirical insights
+\end{itemize}
+    
+\end{frame}
+
+\end{document}

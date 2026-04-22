@@ -1,0 +1,1255 @@
+\section{Background}\label{app:background}
+
+\paragraph{Function Class Regularity} 
+Let \( \searchspace \) be a compact metric space, and let \( C(\searchspace) \) denote the space of real-valued continuous functions on \( \searchspace \), equipped with the uniform norm:
+\[
+    \supnorm{f} := \sup_{\bhp \in \searchspace} |f(\bhp)|.
+\]
+We say a collection \( \family \subset C(\searchspace) \) is:
+\begin{itemize}
+    \item \emph{uniformly bounded} if \( \sup_{f \in \family} \supnorm{f} \leq K \) for some \( K < \infty \),
+    \item \emph{uniformly equicontinuous} if for every \( \varepsilon > 0 \) there exists \( \delta > 0 \) such that
+    \[
+        \norm{\bhp - \bhp'} < \delta \implies |f(\bhp) - f(\bhp')| < \varepsilon \quad \text{for all } f \in \family.
+    \]
+\end{itemize}
+
+We denote by \( C^k(\searchspace) \) the space of \( k \)-times continuously differentiable functions. For \( f \in C^k(\searchspace) \), the \( k \)-th derivative is written \( f^{(k)} \). We define $f^{(0)} \equiv f$. In multivariate settings, this refers to the \( k \)-th total derivative.
+
+\begin{theorem}[Arzelà--Ascoli]\label{thm:arzela-ascoli}
+Any uniformly bounded and uniformly equicontinuous collection \( \family \subset C(\searchspace) \) is relatively compact in the uniform norm topology.
+\end{theorem}
+
+\begin{proposition}\label{prop:derivative_uniform_convergence}
+Let \( \{f_n\} \subset C^1(\searchspace) \) such that \( f_n' \to g \) uniformly and \( f_n(\bhp_0) \to L \) for some \( \bhp_0 \in \searchspace \) and $L \in \R$. Then \( f_n \to f \) uniformly for some \( f \in C^1(\searchspace) \), and \( f' = g \).
+\end{proposition}
+
+\begin{proposition}\label{prop:equi_deriv_bound}
+If \( \{f_n\} \subset C^1(\searchspace) \) and the derivatives \( f_n' \) are uniformly bounded, then \( \{f_n\} \) is uniformly equicontinuous.
+\end{proposition}
+
+\subsection{Scaling Limits and Tensor Programs}\label{app:tensor_programs}
+In this section we will recall some simplified background from \citep{yang2021tensor, yang2023tensor}. For concreteness, we will fix the architecture to a $L$-hidden layer MLP, but all statements can be extended to a much more generic architectures (see Section 2.9.1 in \citep{yang2023tensor}). An $L$-hidden layer MLP of width $n$ with nonlinearity $\phi : \R \to \R$ and no biases is parameterized by weight matrices $\bW^1 \in \R^{n \times d}$, $\bW^2, \ldots, \bW^L \in \R^{n \times n}$, and $\bW^{L+1} \in \R^{1 \times n}$. On an input $\bx \in \R^d$, the network computes
+\begin{equation}\label{eq:mlp}
+    \bh^\ell(\bx) = \bW^{\ell} \bz^{\ell}(\bx) \in \R^n,~~\bz^{\ell}(\bx) = \phi(\bh^{\ell}(\bx)) \in \R^n,~~\text{for } \ell = 1, \ldots, L,
+\end{equation}
+and the output is $f(\bx) = \bW^{L+1} \bz^{L}(\bx) \in \R$. Given $N$ inputs $\bx_1, \ldots, \bx_N$, we will abbreviate
+\begin{align*}
+    \bh^\ell &:= [\bh^\ell(\bx_1) \mid \cdots \mid \bh^\ell(\bx_N)] \in \R^{n \times N}, \\
+    \bz^\ell &:= [\bz^\ell(\bx_1) \mid \cdots \mid \bz^\ell(\bx_N)] \in \R^{n \times N}, \\
+    \boldf   &:= (f(\bx_1), \ldots, f(\bx_N)) \in \R^N.
+\end{align*}
+\paragraph{abc-parameterization} 
+Assume that we train the network using SGD. We recall the definition of abc-parameterization from \citep{yang2021tensor} (see \cite{geiger2020disentangling,chizat2024feature} for similar findings). An abc-parameterization is a width-aware HP scaling specified by a set of HPs $\bhp = \{\alpha_\ell, \sigma_\ell, \eta_\ell\}_{\ell \in [L+1]}$ and HP scaling exponents $\bhpexp = \{a_\ell, b_\ell, c_\ell\}_{\ell \in [L+1]}$ such that
+\begin{enumerate}[label=(\alph*)]
+    \item The weights $\bW^{\ell}$ receive a multiplier $\alpha_\ell n^{-a_\ell}$,
+    \item We initialize each $W_{\alpha \beta}^\ell \sim \cN(0, \sigma^2_\ell n^{-2b_\ell})$, and
+    \item The SGD learning rate in layer $\ell$ is $\eta_\ell n^{-c_\ell}$.
+\end{enumerate}
+
+\paragraph{Asymptotic Notation} 
+Given a sequence $\bx = \{\bx(n)\}_{n=1}^\infty$ of random tensors we write $\bx = \Theta(n^{-a})$ and say that $\bx$ has coordinates of size $\Theta(n^{-a})$ if there exist constants $A, B > 0$ such that, almost surely for sufficiently large $n$,
+\[
+A \leq \frac{1}{\#\bx(n)} \sum_{\alpha} \bx(n)_\alpha^2 \leq B,
+\]
+where $\#\bx(n)$ denotes the number of entries in $\bx(n)$. We use $O(n^{-a})$ and $\Omega(n^{-a})$ similarly.
+
+\paragraph{Dynamical Dichotomy Theorem.} We recall some definitions from \citep{yang2023tensor}. To reflect the network after $t$ steps of training we add a subscript $t$ to the quantities in Eq.\ (\ref{eq:mlp}). We use $\Delta$ to denote a one-step difference of a time-dependent quantity. We say an abc-parameterization is
+\begin{enumerate}
+    \item \textit{stable at initialization} if 
+    \[
+        \bh_0^\ell, \bz_0^\ell = \Theta(1),\, \forall \ell \in [L],~~\text{and } \boldf_0 = O(1).
+    \]
+
+    \item \textit{stable during training} if for any time $t \geq 0$ we have for any training routine
+    \[
+        \Delta \bh_t^\ell, \Delta \bz_t^\ell = O(1),\, \forall \ell \in [L],~~\text{and } \Delta \boldf_t = O(1).
+    \]
+
+    \item \textit{trivial} if for any time $t \geq 1$ and training routine, $\boldf_t - \boldf_0 \to 0$ almost surely as $n \to \infty$. We say the parameterization is \textit{non-trivial} otherwise.
+
+    \item is in the \textit{kernel regime} if there exists $\cK : \R^N \to \R^N$ such that for every $t \geq 0$ and training routine, as $n \to \infty$,
+    \[
+        \boldf_{t+1} - \boldf_t - \eta \cK(\boldf_t) \to 0.
+    \]
+
+    \item is \textit{feature learning} if $\Delta \bz_t^L = \Omega(1)$ for some training routine and $t \geq 0$.
+\end{enumerate}
+\begin{theorem}[Dynamical Dichotomy \citep{yang2021tensor}]\label{thm:dynamical_dichotomy}
+A nontrivial and stable abc-parametrization
+either admits feature learning or is in the kernel regime  but not both. The kernel regime does not admit feature learning, that is, for any training routine $\Delta \bz_t^L \to 0$ for all $t \geq 0$.
+\end{theorem}
+
+ The $\mu$P and NTK parameterization are the maximal feature learning and kernel parameterizations respectively. All other such parameterizations can be obtained from one of these by setting some initialization or learning rate to zero (see Section 5.3 in \citep{yang2021tensor} for more discussion). For adaptive optimizers such as Adam it is possible to extend the definitions to abcd-parameterizations (see Section 2.2 in \citep{yang2023tensor} for more details), for which a similar Dynamical Dichotomy theorem exists.
+
+\subsection{Muon Optimizer}\label{app:muon}
+Here we recall the Muon optimizer introduced by \citet{jordan2024muon}. For transformers typically the embedding and output layers, as well as vector and scalar parameters are trained using Adam. For the remaining matrix parameters, the update is built around the \emph{matrix sign function} $\mathrm{msgn}(\cdot)$, which for a full-rank matrix $\bX$ with SVD $\bX = \bU \bSigma \bV^\top$ is defined as
+\[
+  \mathrm{msgn}(\bX) = \bU \bV^\top.
+\]
+For parameter $\bW \in \R^{m \times n}$ with gradient $\bG \in \R^{m \times n}$, at step $t$ we form a momentum matrix
+\[
+  \bM_{t+1} = \beta \bM_t + (1 - \beta)\, \bG_t,
+\]
+with momentum parameter $\beta \in [0,1)$, and then update the weights by
+\[
+  \bW_{t+1} = \bW_t - \eta \sqrt{\frac{m}{n}}\, p(\bM_{t}) \approx \bW_t - \eta \sqrt{\frac{m}{n}}\, \mathrm{msgn}(\bM_{t}),
+\]
+where $\eta$ is the learning rate, the factor $\sqrt{m/n}$ ensures $\mu$P scaling, and $p$ is a composition of low-degree matrix polynomial chosen to approximate the function $\mathrm{msgn}$. This approximation comes from an iterative Newton-Schulz method where the number of iterations gives the number of polynomial compositions in $p$. 
+
+\subsection{Dion Optimizer}\label{app:dion}
+Dion \citep{ahn2025dion} is an orthonormalization-based optimizer designed to retain the benefits of Muon-style matrix updates while remaining compatible with sharded weight layouts in large-scale LLM training. Instead of applying a Newton--Schulz iteration on each weight matrix, Dion operates on a momentum buffer and uses an amortized power iteration to obtain an orthonormal low-rank update, controlled by a rank hyperparameter and stabilized by error feedback.
+
+For a matrix parameter $\bW \in \mathbb{R}^{m \times n}$ with gradient $\bG \in \R^{m \times n}$ at step $t$, Dion maintains a residual momentum matrix $\bM \in \mathbb{R}^{m \times n}$ and a right factor $\bQ \in \mathbb{R}^{n \times r}$, where $r$ is the rank hyperparameter. Each step begins by accumulating the new gradient into the residual momentum,
+\begin{equation*}
+  \widetilde{\bM}_{t+1} = \bM_t + \bG_t.
+\end{equation*}
+An approximate leading left subspace is then extracted using the current $\bQ_t$,
+\begin{equation*}
+  \bP_t = \mathrm{orth}\bigl(\widetilde{\bM}_{t+1} \bQ_t\bigr),
+  \qquad
+  \bR_t = \widetilde{\bM}_{t+1}^\top \bP_t,
+\end{equation*}
+where $\mathrm{orth}(\cdot)$ returns a matrix with orthonormal columns (e.g.\ via a QR decomposition). The right factor is updated by column-wise normalization,
+\begin{equation*}
+  \bQ_{t+1}^{(j)} = \frac{\bR_t^{(j)}}{\|\bR_t^{(j)}\|_2 + \varepsilon},
+  \qquad j = 1,\dots,r,
+\end{equation*}
+with a small $\varepsilon > 0$ for numerical stability. When $\bQ_t$ spans the dominant right-singular subspace of $\widetilde{\bM}_{t+1}$, this amortized power iteration drives $\bP_t$ and $\bQ_{t+1}$ toward approximate left and right singular vectors of $\widetilde{\bM}_{t+1}$, with both factors having unit-norm columns.
+
+The residual momentum is updated with error feedback,
+\begin{equation*}
+  \bM_{t+1} = \widetilde{\bM}_{t+1} - (1 - \mu)\, \bP_t \bR_t^\top,
+\end{equation*}
+where $\mu \in [0,1)$ controls how aggressively the dominant rank-$r$ component is removed. In the idealized regime where $\bP_t \bR_t^\top$ captures the leading rank-$r$ part of $\widetilde{\bM}_{t+1}$, this update geometrically damps that component by a factor $\mu$ while retaining higher-rank and previously truncated directions in $\bM_{t+1}$. These retained components can subsequently re-enter the leading low-rank subspace, so the residual acts as an error buffer that compensates for the information lost by low-rank truncation.
+
+The weight update Dion uses is
+\begin{equation*}
+  \bW_{t+1}
+  = \bW_t
+    - \eta \sqrt{\frac{m}{n}}\, \bP_t \bQ_{t+1}^\top,
+\end{equation*}
+where the learning rate is $\eta$ and the factor $\sqrt{m/n}$ ensures $\mu$P scaling.
+
+\newpage
+
+\section{Theoretical Results}
+\subsection{Weak Transfer}\label{app:weak_transfer}
+In the following we provide a minimal set of technical conditions for the concept of HP transfer to be well-defined and align with empirical observations. We say that a function is \textit{locally strongly convex} (LSC) with parameters $\growthconst, \growthrad > 0$, if for every minimizer $\bhp^\star \in \argmin f$,
+\[
+    |f(\bhp) - f(\bhp^\star)| \geq \frac{\growthconst}{2} \norm{\bhp - \bhp^\star}^{2},~ \text{for all } \bhp \text{ such that } \norm{\bhp - \bhp^\star} \leq \delta.
+\]
+Recall that we assume that the HP search takes place over a \emph{search space} $\searchspace$:
+\[
+   \searchspace = \prod\limits_{i=1}^{\numhps} [\lb_i, \ub_i],~~\interior{\searchspace} := \prod\limits_{i=1}^{\numhps} (\lb_i, \ub_i),
+\]
+which is a $\numhps$-dimensional box with bounds $\lb_i < \ub_i$ and interior $\interior{\searchspace}$. 
+\begin{definition}[HP Transfer]\label{def:hp_transfer}
+    The scaling $\bhpexp$ admits \textit{HP transfer} for a training procedure $\algo$ and metric $\phi$ over a search space $\searchspace$ if the following hold almost surely
+    \begin{enumerate} 
+        \item $\phi_n \in C^2(\searchspace)$ is convex and has a unique minimizer $\bhp^\star(n)$.
+
+        \item There exists LSC deterministic $\phi_\infty$ such that $\phi_n \to \phi_{\infty}$ and $\argmin \phi_\infty \subseteq \interior{\searchspace}$.
+
+        \item The family $\{\phi''_n\}$ is uniformly bounded and uniformly equicontinuous.
+    \end{enumerate}    
+\end{definition}
+This definition implies the following desirable consequences. 
+\begin{proposition}[HP Transfer Properties]\label{prop:hp_transfer_properties}
+    In the context of Definition \ref{def:hp_transfer}, the following are true
+    \begin{enumerate}
+        \item $\phi_\infty \in C^2(\searchspace)$ is convex and has a unique minimizer $\bhp^\star(\infty)$
+        
+        \item $\phi_n \to \phi_\infty$, $\phi'_n \to \phi'_\infty$, $\phi''_n \to \phi''_\infty$ uniformly and $\bhp^\star(n) \to \bhp^\star(\infty)$.
+    \end{enumerate}
+\end{proposition}
+\begin{proof}
+By Proposition \ref{prop:equi_deriv_bound}, it follows that for all $j \in \{0, 1, 2\}$, ${\phi_n^{(j)}}$ is uniformly equicontinuous. Since $\phi_n$ has a limit, it must converge uniformly $\phi_\infty$. Now repeatedly using Proposition \ref{prop:derivative_uniform_convergence} after passing to subsequences and invoking Arzela-Ascoli (Theorem \ref{thm:arzela-ascoli}), we see that $\phi_n^{(j)} \to \phi_\infty^{(j)}$ uniformly for $j \in \{1, 2\}$. Now it follows that $\phi_\infty \in C^2(\searchspace)$ since the uniform limit of continuous functions is continuous and $\phi_\infty$ is convex since convexity is preserved under pointwise limits. Note that the local strong convexity condition implies that $\phi_\infty$ has a unique minimizer. Now because $\searchspace$ is compact, every subsequence of $\bhp^\star(n)$ has a convergent subsequence. By uniform convergence and the continuity of the $\phi_n$ and $\phi_\infty$, it follows that the limit of this subsequence is a minimizer of $\phi_\infty$. By the uniqueness of this minimizer, all the subsequences converge to $\bhp^\star(\infty)$ hence $\bhp^\star(n) \to \bhp^\star(\infty)$.
+\end{proof}
+
+This definition gives a minimal set of conditions under which the concept becomes mathematically coherent and aligns with observed empirical behavior. Requiring $\phi_n$ to have a unique minimizer removes ambiguity about which configuration should be transferred across scales. The convexity, smoothness, and equicontinuity conditions provide technical regularity that facilitates analysis and generally hold in practice.
+
+The local strong convexity of $\phi_\infty$ ensures that performance meaningfully degrades away from the optimum. Without this condition, $\phi_\infty$ may be flat near its minimizer, making accurate hyperparameter selection potentially irrelevant in the large-$n$ limit. The assumption that $\bhp^\star(\infty)$ lies in the interior of the search space ensures that this optimum remains unchanged under any enlargement of the domain; this condition rules out the $n$-dependent drift of the HPs of interest due to a ``suboptimal'' scaling -- see Appendix~\ref{app:background} for discussions. 
+
+\paragraph{``Optimal'' scaling limit.} 
+In \citep{yang2022tensor, yang2023depth}, the authors remark that a key principle behind hyperparameter transfer is the ``optimality'' of the scaling. Heuristically if a scaling yields a suboptimal limit, then it cannot exhibit hyperparameter transfer since the HPs $\bhp$ need to undergo a $n$-dependent rescaling to ``convert'' the suboptimal scaling into the optimal scaling. The following proposition formalizes this intuition. The proposition requires $\bzero \in \searchspace$ to avoid uninteresting cases where the optimal HP is zero which will generally not occur for optimization HPs in normal neural network training.
+\begin{theorem}\label{thm:transfer_optimality}
+    Let $\bhpexp$ be a scaling that exhibits transfer over $\searchspace = [0, \ub_1] \times \cdots [0, \ub_k]$ and all $\searchspace'$ containing $\searchspace$. Any other scaling $\bhpexp' \neq \bhpexp$ with these properties must satisfy 
+    \[
+    \min_{\bhp \in \searchspace} \phi_\infty(\bhp; \bhpexp) = \min_{\bhp' \in \searchspace'} \phi_\infty(\bhp'; \bhpexp').
+    \]
+\end{theorem}
+\begin{proof}[Proof of Theorem \ref{thm:transfer_optimality}]
+    For brevity define
+    \[
+        \bhp_\star := \argmin_{\bhp \in \searchspace} \phi_\infty(\bhp; \bhpexp) \text{ and } \bhp'_\star := \argmin_{\bhp' \in \searchspace} \phi_\infty(\bhp'; \bhpexp').
+    \]
+    For the sake of contradiction assume that $\phi_\infty(\bhp_\star; \bhpexp) > \phi_\infty(\bhp_\star'; \bhpexp')$. For large enough $n$, we will have $\phi_n(\bhp_\star; \bhpexp) > \phi_n(\ol{\bhp}_\star; \bhpexp)$ where $\ol{\bhp}_\star = \bhp'_\star \odot (n^{\hpexp_1 - \hpexp'_1}, \ldots, n^{\hpexp_k - \hpexp'_k})$ and $\bhp_\star \neq \ol{\bhp}_\star$ which is a contradiction. The case $\phi_\infty(\bhp_\star; \bhpexp) < \phi_\infty(\bhp_\star'; \bhpexp')$ follows analogously.
+\end{proof}
+
+The dynamical dichotomy theorem states that all scalings induced by abcd-parameterizations except for $\mu$P lead to optimization degeneracies or non-feature learning behavior. Therefore the proposition implies that if HP transfer is possible with $\mu$P and feature learning is advantageous, then it should be only possible using $\mu$P. Of course, it is still a challenging problem to rigorously characterize when $\mu$P will exhibit transfer and when feature learning is actually advantageous.
+
+\subsection{Asymptotic Rates}\label{app:asymptotic_rates}
+Recall the definitions of the quantities $a_n, b_n, c_n$ from Definition \ref{def:convergent_quantities}. We will need to reason about the following quantity which we call the \textit{uniform loss gap}.
+\begin{equation}\label{eq:uniform_loss_gap}
+    \bar{a}_n := \supnorm{\phi_n - \phi_\infty}. 
+\end{equation}
+Using the local strong convexity assumption, we will be able to directly relate the HP gap with the uniform loss gap. We first prove a convenient lemma which bounds the minimizer displacement in terms of the sup-norm of the perturbation.
+\begin{lemma}\label{lem:sc_unif_perturb}
+    Let $f: \searchspace \to \R$ and $g: \searchspace \to \R$ such that $f$ has a unique minimizer $\bx_f$ and $g$ has a unique minimizer $\bx_g$, and $g$ is $\growthconst$ strongly-convex
+    \[
+        g(\bx) - g(\bx_g) \geq \frac{\growthconst}{2} \norm{\bx - \bx_g}^2,\, \forall \bx \in \searchspace
+    \]
+    for some $\growthconst > 0$. If $\supnorm{f - g} \leq \varepsilon$, then
+    \[
+        \norm{\bx_f - \bx_g} \leq 2 \qty(\frac{\varepsilon}{\growthconst})^{1 / 2}.
+    \]
+\end{lemma}
+\begin{proof}
+    Note that $g(\bx_f) - \varepsilon \leq f(\bx_f) \leq f(\bx_g) \leq g(\bx_g) + \varepsilon$, hence
+    \[
+        g(\bx_f) - g(\bx_g) \leq 2 \varepsilon.
+    \]
+    By strong convexity, $2 \varepsilon \geq \frac{\growthconst}{2} \norm{\bx_f-\bx_g}^2$, which after rearranging gives the desired conclusion.
+\end{proof}
+The above lemma, along with Propositions \ref{prop:hp_transfer_properties} and Taylor's theorem immediately yields the following.
+\begin{lemma}\label{lem:basic_rate_unif}
+    Assume HP transfer holds (Def.\ \ref{def:hp_transfer}), then $b_n = O\qty(\bar{a}_n^{1 / 2})$ and $c_n = \Theta(b_n^2)$.
+\end{lemma}
+To relate the loss gap $a_n$ and the uniform loss gap $\bar{a}_n$ we must make further assumptions. Intuitively, we would like to capture the fact that typically the uniform loss gap is dominated by a fairly uniform, positive loss gap for HPs which are nearly optimal.
+\begin{definition}\label{def:locally_tight}
+    We will say that the uniform loss gap is locally tight if there exists some radius $\bar{r}$ and constants $0 < c \leq C$ such that for all $\bhp \in B(\bhp^\star(\infty), \bar{r})$, 
+\[
+    c \bar{a}_n \leq \phi_n(\bhp) - \phi_\infty(\bhp) \leq C \bar{a}_n.
+\]
+\end{definition}
+This essentially states that the uniform loss gap tightly controls the convergence rate for any nearly optimal set of HPs. This corresponds with the empirical observation that nearly optimal hyperparameters obey identical scaling laws. Under this assumption it is easy to see that $a_n = \Theta(\bar{a}_n).$ 
+\begin{lemma}\label{lem:unif_loss_gap}
+    Assume HP transfer holds (Def.\ \ref{def:hp_transfer}). If the uniform loss gap $\bar{a}_n$ is locally tight then $a_n = \Theta(\bar{a}_n)$.
+\end{lemma}
+\begin{proof}
+    Note that we have
+    \begin{align*}
+        \phi_n(\bhp^\star(n)) - \phi_\infty(\bhp^\star(\infty)) &= \phi_n(\bhp^\star(n)) - \phi_\infty(\bhp^\star(n)) + \phi_\infty(\bhp^\star(n)) - \phi_\infty(\bhp^\star(\infty))\\
+        &\geq \phi_n(\bhp^\star(n)) - \phi_\infty(\bhp^\star(n)),\\
+        \phi_n(\bhp^\star(n)) - \phi_\infty(\bhp^\star(\infty)) &= \phi_n(\bhp^\star(n)) - \phi_n(\bhp^\star(\infty)) + \phi_n(\bhp^\star(\infty)) - \phi_\infty(\bhp^\star(\infty))\\
+        &\leq \phi_n(\bhp^\star(\infty)) - \phi_\infty(\bhp^\star(\infty)).
+    \end{align*}
+    Since $\bhp^\star(n) \to \bhp^\star(\infty)$ we can apply the inequalities in Definition \ref{def:locally_tight} for large enough $n$ to yield the claim.
+\end{proof}
+\begin{proof}[Proof of Proposition \ref{prop:basic_rate}]
+    This follows directly by applying Lemmas \ref{lem:basic_rate_unif} and \ref{lem:unif_loss_gap}
+\end{proof}
+
+
+\subsection{Grid Search}\label{app:grid_search}
+We now turn towards the connection between the previous asymptotic quantities and compute-optimal grid search. Define a \emph{grid} $\grid$ in a search space $\searchspace$ to be a collection of points $\{\bhp^{(1)}, \ldots, \bhp^{(M)}\}$ contained in $\searchspace$. The \emph{grid resolution} $\gridresval{\grid}{\searchspace}$ is defined as the largest distance of a point in $\searchspace$ to a point in $\grid$, that is
+\[
+    \gridresval{\grid}{\searchspace} := \sup_{\bhp \in \searchspace} \min_{\bhp' \in \grid} \norm{\bhp - \bhp'}.
+\]
+For a grid $\grid$ in the search space $\searchspace$, define $\bhp^\star(n, \grid) = \argmin_{\bhp \in \grid} \phi_n(\bhp)$. Let us assume that we are allocated a flops budget $\flops$ in order to perform hyperparameter search and produce a final model.  
+
+Recall that for brevity we use $f(x) \sim g(x)$ to mean $f(x) = \Theta(g(x))$. For a grid $\grid$ of resolution $\gridres$, we will make the following convenience assumption for Theorem \ref{thm:grid_and_transfer_rate} .
+\begin{assumption}[Grid proximity]\label{assump:grid_proximity}
+For a grid $\grid$ of resolution $\gridres$, we assume that
+\[
+    \min_{\bhp \in \grid} \norm{\bhp - \bhp^\star(n)} \sim \gridres.
+\]
+\end{assumption}
+This assumption is morally true if $\grid$ is not chosen with knowledge of the location of $\bhp^\star(\infty)$. If for a given $\grid$ we chose $\bhp^\star(\infty)$ uniformly at random within $\grid$, then this assumption holds on average. 
+% We will assume the growth exponent $\growthexp = 2$, since by uniform convergence of derivatives, for large enough $n$ the functions $\phi_n$ will also satisfy a LGC with the same growth exponent. This is in general not possible for $\growthexp > 2$ due to the requirement of lower order derivatives needing to be zero by Proposition \ref{prop:local_growth_deriv} which cannot be guaranteed by uniform convergence alone. 
+Suppose we have a compute budget of $\flops$ flops, and the amount of flops needed for a single training run scales with $n^{\compexp}$ for models of width $n$, where $\compexp = 2$ for standard optimization algorithms on standard architectures. For a scaling $\bhpexp$, we will evaluate the quality of a set of HPs $\bhp$ by performing a full training run for a certain width $n$ using the scaled hyperparameters $\scaledhps_n(\bhp, \bhpexp)$. Let us assume we perform a grid search over $\numhps$ HPs. We first consider compute optimal performance when directly tuning the HPs on a large model. 
+
+\begin{proof}[Proof of Theorem \ref{thm:grid_and_transfer_rate}(a)]
+    For a grid of resolution $\gridres = \gridresval{\grid}{\searchspace}$ we will have $|\grid| \sim \gridres^{-\numhps}$ and $\flops \sim n^\compexp \gridres^{-\numhps}$. Now observe that by uniform convergence of derivatives (Prop.\ \ref{prop:hp_transfer_properties}), for $n$ large enough $\phi_n$ will satisfy $(\growthconst', \growthrad')$-LSC for some constants $\growthconst', \growthrad' > 0$ and so $\phi_n(\bhp^\star(n, \grid)) - \phi_n(\bhp^\star(n)) \sim \gridres^2$ by Assumption \ref{assump:grid_proximity}. Therefore,
+    \begin{align*}
+        \phi_n(\bhp^\star(n, \grid)) - \phi_\infty^\star &= \phi_n(\bhp^\star(n, \grid)) - \phi_n(\bhp^\star(n)) + \phi_n(\bhp^\star(n)) - \phi_\infty^\star\\ 
+        &\sim \gridres^{2} + n^{-\alpha}\\
+        &\sim n^{2 \compexp/ \numhps} \flops^{-2 / \numhps} + n^{-\alpha}.
+    \end{align*}
+    We see the final expression is minimized by taking $n^\star \sim \flops^{\frac{2}{\numhps \alpha + 2 \compexp}}$ which yields the rate
+    \[
+        \phi_n(\bhp^\star(n, \grid)) - \phi_\infty^\star \sim \flops^{-\frac{2\alpha }{\numhps \alpha + 2\compexp }},
+    \]
+    as claimed.
+\end{proof}
+Now we consider the strategy of transferring the optimal HPs from a smaller model. We say that transfer is \textit{useful} if this strategy achieves a better loss scaling than directly tuning the large model under the same compute budget, as specified above. 
+
+\begin{proof}[Proof of Theorem \ref{thm:grid_and_transfer_rate}(b)]
+    Note that in this setting $\flops \sim n^\compexp \gridres^{-\numhps} + M^\compexp$. The performance scaling is
+    \begin{align*}
+        \phi_M(\bhp^\star(n, \grid)) - \phi_\infty^\star &= \phi_M(\bhp^\star(n, \grid)) - \phi_M(\bhp^\star(n))\\ 
+        &\quad+ \phi_M(\bhp^\star(n)) - \phi_M(\bhp^\star(M))\\ 
+        &\quad+ \phi_M(\bhp^\star(M)) - \phi_\infty^\star\\ 
+        &\sim \rho^{2} + n^{-2\beta} + M^{-\alpha}\\
+        &\sim \qty(\frac{n^\compexp}{\flops - M^\compexp})^{2/\numhps} + n^{-2\beta} + M^{-\alpha}.
+    \end{align*}
+    Since $\flops - M^r \sim \flops$, we should take $M^\star \sim \flops^{1/\compexp}$ in which case the above simplifies to
+    \[
+        \phi_M(\bhp^\star(n, \grid)) - \phi_\infty^\star \sim \frac{n^{2\compexp / \numhps}}{\flops^{2 / \numhps}}  + n^{-2\beta} + \flops^{-\alpha/r}
+    \]
+    which is minimized a $n^\star \sim \flops^{\frac{1}{\numhps \beta + \compexp}}$ and yields $ \phi_M(\bhp^\star(n, \grid)) - \phi_\infty^\star \sim \flops^{\frac{-2 \beta}{\numhps \beta + \compexp}} + \flops^{\frac{-\alpha}{\compexp}}$. Now note that $\frac{\alpha}{\compexp} > \frac{2 \alpha}{\numhps \alpha + 2 \compexp}$ and $\frac{2 \beta}{\numhps \beta + \compexp} > \frac{2\alpha}{\numhps \alpha + 2 \compexp}$ if and only if $\beta > \alpha / 2$, which is the condition for useful transfer.
+\end{proof}
+
+\bigskip
+
+\subsection{Random Features Regression}
+\label{app:rf-regression}
+
+Consider the following data generating process where the labels come from a single-index model, and we train a random features ridge regression estimator on $N$ samples, 
+\begin{align*}
+    &y = \sigma_*(\langle\bx,\bbeta_*\rangle) + \varepsilon, \quad \text{where~ } \bx\sim\mathcal{N}(0,\bI_d), ~ \norm{\bbeta_*}=1, ~\mathrm{Var}(\varepsilon) = \sigma_\varepsilon^2. \\
+    &f(\bx) = \langle\ba_\lambda, \sigma(\bW\bx)\rangle, 
+    \quad \text{where~ } \bW\in\R^{d\times n}, ~
+    [\bW]_{i,j}\sim \mathcal{N}(0,1/d), \\
+    &\textstyle\ba_\lambda := \mathrm{argmin}_{\ba\in\R^n} \sum_{i=1}^N (y_i - \langle\ba, \sigma(\bW\bx_i)\rangle)^2 + \lambda\norm{\ba}_2^2. 
+\end{align*}
+We aim to select the optimal regularization parameter $\lambda$ that minimizes the prediction risk (generalization error) $\cR=\E_{\bx} [(y - f(\bx))^2]$. We make the following assumptions. 
+\begin{assumption}\,
+\begin{itemize}[leftmargin=*,topsep=0mm,itemsep=0mm]
+    \item \textbf{Proportional limit.}  $N,d,n\to\infty, N/d\to\psi_1, n/d\to\psi_2$ where $\psi_1,\psi_2\in (0,\infty)$. 
+    \item \textbf{Normalized activation.} Both the student and teacher nonlinearities are normalized such that $\E[\sigma],\E[\sigma_*]=0$, $\norm{\sigma}_\gamma,\norm{\sigma_*}_\gamma=1$, and also $\norm{\sigma'}_\gamma,\norm{\sigma_*'}_\gamma\neq 0$. We further require that $\sigma$ is a nonlinear odd function with bounded first three derivatives, and $\sigma_*$ is $\Theta(1)$-Lipschitz.
+\end{itemize}
+\label{assumption:RF}
+\end{assumption}
+\begin{remark}
+The above assumptions are standard in the high-dimensional asymptotic analysis of random features models, see e.g., \cite{mei2022generalization,gerace2020generalisation}. The non-zero expectation of $\sigma',\sigma_*'$ is necessary for the RF model to outperform the null estimator in the proportional regime. The assumption of odd $\sigma$ simplifies the Gaussian equivalence computation --- see \cite{hu2022universality,ba2022high}. 
+\end{remark}
+
+\paragraph{Asymptotic prediction risk.} 
+Under Assumption~\ref{assumption:RF}, following \cite{hu2022universality}, we know that the asymptotic prediction risk is given as by the following implicit equations,  
+\begin{align*}
+    \lim_{n,d,N\to\infty} \E[(y-f(\bx))^2] \overset{\P}{\to} \cR(\lambda) := - (\mu_2^{*2} + \sigma_\varepsilon^2)\cdot \frac{m_1'(\lambda)}{m_1(\lambda)^2} - \mu_1^{*2} \cdot \frac{m_2'(\lambda)}{m_1(\lambda)^2},
+\end{align*}
+where the Hermite coefficients $\mu_1^* = \E_{z\sim\cN(0,1)}[\sigma_*'(z)],  \mu_2^{*2} = 1-\mu_1^{*2}$, and the coupled Stieltjes transforms $m_1(z)$ and $m_2(z)\in\mathbb{C}^+\cup \R_{+}$ are uniquely defined by the following self-consistent equations for $z\in\mathbb{C}^+\cup \R_{+}$,
+\begin{align}
+    \frac{1}{\psi_1}(m_1(z)-m_2(z))(\mu_2^2m_1(z)+\mu_1^2m_2(z))+\mu_1^2m_1(z)m_2(z)\left(zm_1(z)-1\right)=& ~0, \label{eq:stieltjes1}\\
+    \frac{\psi_2}{\psi_1}\left(\mu_1^2m_1(z)m_2(z)+\frac{1}{\psi_1}(m_2(z)-m_1(z))\right)+\mu_1^2m_1(z)m_2(z)\left(zm_1(z)-1\right)=& ~0, \label{eq:stieltjes2}
+\end{align}
+where $\mu_1 = \E_{z\sim\cN(0,1)}[\sigma'(z)], \mu_2^2 = 1-\mu_1^2$. Note that $\sigma$ being nonlinear implies $\mu_2\neq 0$. We omit the argument in $m_1(\lambda),m_2(\lambda)$ except when tracking the $\lambda$-dependence. $m_1',m_2'$ stand for derivative with respect to $\lambda$. 
+To further simplify the exposition, we define  $\eta:=\psi_1/\psi_2$, and write the asymptotic prediction risk at width $\psi_2$ and ridge penalty $\lambda$ as $\cR_{\psi_2}(\lambda) = \cR_{\psi_1/\eta}(\lambda)$. 
+
+\paragraph{Large-width limit.} First we consider the test performance of the ``infinite-width'' model, which corresponds to taking $\psi_2=n/d\to\infty$ or $\eta\to 0$. Note that the prediction risk in this limit is well-defined and has been computed in prior works (see e.g., \cite{bartlett2021deep}). First recall that $m_1,m_2>0$ and $z m_1(z)-1$ remains uniformly bounded for any $1/\eta$, hence from \eqref{eq:stieltjes2} we know that at the large-width limit, 
+\begin{align*}
+    \mu_1^2 m_1m_2 + \psi_1^{-1} (m_2-m_1) =:\sT_1(m_1,m_2) = 0, \quad \lambda m_1 + \mu_2^2 m_1 + \mu_1^2 m_2 - 1 =: \sT_2(m_1,m_2,\lambda) = 0. 
+\end{align*}
+Reparameterize $t:= 1+\mu_1^2\psi_1 m_1>1$, we have $\lambda(t) = \frac{\mu_1^2\psi_1}{t-1} - \frac{\mu_1^2}{t} - \mu_2^2$. 
+By the chain rule, 
+\[
+\partial_t m_1 = \frac{1}{\mu_1^2\psi_1}, \quad
+\partial_t m_2 = \frac{1}{\mu_1^2\psi_1t^2}, \quad
+\partial_t \lambda = -\frac{\mu_1^2S(t)}{t^2(t-1)^2}, 
+\]
+where we defined $S(t) := \psi_1t^2 - (t-1)^2$. Hence at $\eta=0$ we have
+\begin{align*}
+    \frac{m_1'}{m_1^2} = -\frac{\psi_1 t^2}{S(t)},\quad
+    \frac{m_2'}{m_1^2} = -\frac{\psi_1}{S(t)}.
+\end{align*}
+Therefore, 
+
+\[
+\cR_\infty(\lambda(t)):=\lim_{\psi_2\to\infty}\cR_{\psi_2}(\lambda(t)) = \frac{\psi_1 ((\mu_2^{*2} + \sigma_\varepsilon^2) t^2 + \mu_1^{*2})}{S(t)}. 
+\]
+Differentiating the risk yields the closed-form expression of the optimal ridge penalty (consistent with \cite{dobriban2018high,wu2020optimal}), 
+\begin{align}
+\lambda^*(\infty) =  \frac{\mu_1^2(\sigma_{\varepsilon}^2+\mu_2^{*2})}{\mu_1^{*2}} - \mu_2^2. \label{eq:optimal-lambda}
+\end{align}
+We restrict ourself to the setting where non-vanishing regularization is needed at the large-width limit, i.e., $\lambda^*(\infty)>0$. 
+Denote $t_*$ as the corresponding optimal value of $t=1+\mu_1^2\psi_1m_1$, the optimality condition $\mu_1^{*2} = \frac{(\mu_2^{*2} + \sigma_\varepsilon^2) t_*(t_*-1)}{\psi_1t_*-t_*+1}$ implies that
+\[
+\psi_1t_*-t_*+1>0, \quad S(t_*) = (\psi_1t_*-t_*+1) t_* + (t_*-1) > 0.
+\]
+Hence we have the following characterization of the curvature
+\begin{align}
+\cR_\infty''(\lambda^*(\infty)) = \frac{2(\mu_2^{*2} + \sigma_\varepsilon^2)\psi_1}{S(t_*) \lambda'(t_*)^2 (\psi_1 t_*-t_*+1)} > 0, 
+\quad
+\lambda'(t_*) = -\frac{\mu_1^2S(t_*)}{t_*^2(t_*-1)^2} < 0. 
+\label{eq:RF-curvature}
+\end{align}
+Note that \eqref{eq:RF-curvature} validates the local strong convexity of $\cR_\infty$. 
+
+\paragraph{Finite-width sensitivity.}
+Now consider the system given by \eqref{eq:stieltjes1}\eqref{eq:stieltjes2}
+\[
+E(m_1,m_2,\lambda,\eta) := \begin{bmatrix}
+    \sT_2(m_1,m_2,\lambda) \\ \sT_1(m_1,m_2) + \eta \sT_3(m_1,m_2,\lambda)
+\end{bmatrix},
+\]
+where $\sT_3 = \mu_1^2m_1m_2(\lambda m_1-1)$. Differentiate $E=0$ with respect to $\eta$ and evaluate at $\eta=0$,
+\begin{align}
+J_0\begin{bmatrix}
+    \partial_{\eta} m_1 \\ \partial_{\eta} m_2
+\end{bmatrix}
+= - \begin{bmatrix}
+    0 \\ T
+\end{bmatrix} \Bigg|_{\eta=0}, \quad \text{where} \quad
+J_0 := \partial_{m_1,m_2}(\sT_2,\sT_1) = \begin{bmatrix}
+    \lambda+\mu_2^2\quad &\mu_1^2 \\ \mu_1^2m_2-\psi_1^{-1}  &\mu_1^2m_1+\psi_1^{-1}
+\end{bmatrix}. \label{eq:jacobian}
+\end{align}
+Recall that $\sT_2=0$ yields $\lambda m_1-1 = -(\mu_2^2m_1+\mu_1^2m_2)$, and hence $T|_{\eta=0} = -\mu_1^2m_1m_2(\mu_2^2m_1+\mu_1^2m_2)$. 
+On the other hand, by direct computation
+\begin{align}
+\mathrm{det}J_0 = \frac{\mu_1^2S(t)}{\psi_1 t(t-1)}, \quad \Rightarrow \quad
+\mathrm{det}J_0(t_*)>0.
+\label{eq:jacobian-invertibility}
+\end{align}
+
+Solving the linear system \eqref{eq:jacobian} yields
+\begin{align*}
+    \partial_\eta m_1 =& -\frac{\mu_1^4 m_1m_2(\mu_2^2m_1+\mu_1^2m_2)}{\mathrm{det} J_0} = -\frac{(t-1)^4(\mu_1^2+\mu_2^2t)}{\mu_1^4\psi_1^2 t S(t)}, \\
+    \partial_\eta m_2 =& -\frac{(\lambda+\mu_2^2)\mu_1^2m_1m_2(\mu_2^2m_1+\mu_1^2m_2)}{\mathrm{det} J_0} = \frac{(t-1)^3(\mu_1^2+\mu_2^2t)(\psi_1t-t+1)}{\mu_1^4\psi_1^2t^2 S(t)}. 
+\end{align*}
+
+Differentiating the prediction risk with respect to $\eta$ and evaluate at the large-width limit $\eta=0$,
+\[
+\partial_{\eta=0} \cR_{\infty}(\lambda) = -(\mu_2^{*2} + \sigma_\varepsilon^2)\left(\frac{\partial_\eta m_1'}{m_1^2} - \frac{2m_1' \partial_\eta m_1}{m_1^3}\right) -\mu_1^{*2}\left(\frac{\partial_\eta m_2'}{m_1^2} - \frac{2m_2'\partial_\eta m_1}{m_1^3}\right),  
+\]
+where $\partial_{\eta=0} \cR_{\infty}(\lambda) = \partial_\eta \cR_{\psi_1/\eta}(\lambda) \big|_{\eta=0}$. 
+A similar determinant calculation yields
+\[
+\partial_\eta m_1' = -\frac{\mu_1^2\sS}{\mathrm{det}J_0}, \quad \partial_\eta m_2' = -\frac{(\lambda+\mu_2^2)\sS}{\mathrm{det}J_0},
+\]
+where 
+\begin{align*}
+\sS :=& \mu_1^2 m_2(2\lambda m_1-1) m_1' + \mu_1^2 m_1(\lambda m_1-1)  m_2' + \mu_1^2 m_1^2 m_2 
+\\ 
+=& \frac{(t-1)^3}{\mu_1^4\psi_1^2}\left[-\frac{t}{S(t)}
++\frac{(2t+1)}{S(t)}\cdot\frac{t-1}{\mu_1^2\psi_1}\cdot\frac{\mu_1^2+\mu_2^2t}{t}\right]
++\frac{(t-1)^3}{\mu_1^4\psi_1^3\,t}.
+\end{align*}
+
+
+Using the above, a tedious algebraic calculation gives the following expression of the sensitivity of the prediction risk (at fixed $\lambda$) with respect to $\eta$:
+\begin{align}
+    \partial_{\eta=0} \cR_{\infty}(\lambda) = \frac{(t-1)^2 Q(t)}{\mu_1^2S(t)^2}, \label{eq:R-derivative}
+\end{align}
+where $Q(t)=\sum_{k=0}^2 c_k t^k$ with coefficients
+\begin{align*}
+c_2&=\mu_1^2(\mu_2^{*2} + \sigma_\varepsilon^2) - \mu_2^2(\mu_2^{*2} + \sigma_\varepsilon^2) + 2\mu_2^2\mu_1^{*2}\,(\psi_1-1),\\
+c_1&=-3\mu_1^2(\mu_2^{*2} + \sigma_\varepsilon^2) + \mu_1^2\mu_1^{*2}(\psi_1-1) + \mu_2^2(\mu_2^{*2} + \sigma_\varepsilon^2) + \mu_2^2\mu_1^{*2}(\psi_1+3),\\
+c_0&=2\mu_1^2(\mu_2^{*2} + \sigma_\varepsilon^2) + \mu_1^{*2}\,(2\mu_1^2\psi_1+2\mu_1^2-1).
+\end{align*}
+Importantly, under the optimal $\lambda$ defined in \eqref{eq:optimal-lambda}, we have the factorization
+\[
+Q(t_*) = \frac{2(\mu_2^{*2} + \sigma_\varepsilon^2)(\mu_1^2+\mu_2^2t_*)(t_*-1)S(t_*)}{\psi_1 t_*-t_*+1}, 
+\]
+and since $(t_*-1), S(t_*), (\psi_1 t_* -t_*+1)>0$, we conclude the derivative \eqref{eq:R-derivative} at $t_*$ is strictly positive
+\begin{align}
+    \partial_{\eta=0} \cR_{\infty}(\lambda_*(\infty)) = \frac{2(\mu_2^{*2} + \sigma_\varepsilon^2) (\mu_1^2+\mu_2^2t_*)(t_*-1)^3}{\mu_1^2S(t_*)(\psi_1 t_*-t_*+1)} =: C_\eta > 0. 
+    \label{eq:C-eta}
+\end{align}
+
+\paragraph{Putting things together.} Recall that the asymptotic prediction risk $\cR$ is $C^2$ in $\lambda$ and $C^1$ in $\eta$. 
+Given the Jacobian invertibility \eqref{eq:jacobian-invertibility} and local strong convexity \eqref{eq:RF-curvature}, the implicit function theorem (IFT) implies that there exists a neighborhood defined by some $\eta_0>0$ and a unique $C^1$ map $\bar{\lambda}^*: [0,\eta_0)\to\R_+$, such that $\bar{\lambda}^*(0) = \lambda^*(\infty)$, $\partial_{\lambda} \cR_{\eta}(\bar{\lambda}^*(\eta))=0$, and $\partial_{\lambda}^2 \cR_{\eta}(\bar{\lambda}^*(\eta)) > 0$. Consequently, we may take a first-order expansion and conclude (setting $\eta=\psi_1/\psi_2$ under with $\psi_1$)
+\begin{align}
+    \lambda^*(\psi_2) = \lambda^*(\infty) + \partial_{\eta\to 0_+}\bar{\lambda}^*(\eta)\cdot \frac{\psi_1}{\psi_2} + o(\psi_2^{-1}), \quad
+    \partial_{\eta\to 0_+}\bar{\lambda}^*(\eta) :=  -\frac{\partial_{\lambda}\partial_{\eta}\cR_{\infty}(\lambda^*(\infty))}{\partial_{\lambda}^2\cR_{\infty}(\lambda^*(\infty))} =: C_\lambda. 
+    \label{eq:RF-bn}
+\end{align}
+Note that the denominator in $C_\lambda$ is strictly positive by \eqref{eq:RF-curvature}. Moreover, since $\lambda'(t_*)\neq 0$, we may write $\partial_{\lambda}\partial_{\eta}\cR_{\infty}(\lambda) = \frac{\partial_t(\partial_{\eta=0}\cR(\lambda(t)))}{\partial_t\lambda(t)}$, and compute
+$
+C_\lambda = \frac{(3\psi_1-4\mu_1^2\psi_1+1)t_*^2 + 2(2\mu_1^2\psi_1-1)t_* +1}{2\psi_1 t_*^2}. 
+$ 
+This confirms that the hyperparameter gap vanishes at a rate of $O(\psi_2^{-1})$. 
+
+For the loss gap, denote $\delta_{\eta} = \lambda^*(\psi_1/\eta) - \lambda^*(\infty)$ for $\eta\in [0,\eta_0)$, the IFT and Taylor expansion gives
+\begin{align*}
+\cR_{\psi_1/\eta}(\lambda^*(\infty) + \delta_\eta) 
+=&\, \cR_{\infty}(\lambda^*(\infty)) + \partial_{\lambda=\lambda^*(\infty)} \cR_{\infty}(\lambda^*(\infty)) \delta_\eta + \partial_{\eta=0} \cR_{\infty}(\lambda^*(\infty)) + O(\delta_\eta^2 + \eta^2) \\
+\overset{(i)}{=}&\,
+\cR_{\infty}(\lambda^*(\infty)) + C_\eta\cdot \frac{\psi_1}{\psi_2} + o(\psi_2^{-1}),
+\end{align*}
+where $(i)$ is due to the stationarity condition $\partial_{\lambda=\lambda^*(\infty)} \cR_{\infty}(\lambda^*(\infty))=0$ and $\delta_\eta = O(\eta)$ from \eqref{eq:RF-bn}, and $C_\eta>0$ is explicitly given in \eqref{eq:C-eta}. The strict positivity of $C_\eta$ ensures that the loss gap scales exactly as $\Theta(\psi_2^{-1})$. Hence by Proposition~\ref{prop:basic_rate} and Theorem~\ref{thm:grid_and_transfer_rate} we know that the ridge penalty in RF regression exhibits \textit{fast and useful transfer}, i.e., the suboptimality gap $\abs{\cR_\infty(\lambda^*(\psi_2)) - \cR_\infty(\lambda^*(\infty))} \sim \psi_2^{-2} \ll \abs{\cR_{\psi_2}(\lambda^*(\psi_2)) - \cR_{\infty}(\lambda^*(\infty))}$, which aligns with the observations in Figure~\ref{fig:RFF} and concludes Theorem~\ref{thm:RF-rate}. 
+
+\bigskip 
+
+\subsection{Decomposition-aware Fast Transfer}\label{app:fast_transfer}
+In this section we formalize our quantitative bound on the HP gap $b_n$ in terms of the top-$\hptrunc$ invariance and residual flatness arising from our decomposition. For the sake of simplicity we will assume that $\searchspace$ is small enough so that the local strong convexity condition holds globally.
+ \begin{definition}\label{def:curvature}
+     For $f \in C^2(\searchspace)$, define the curvature $\mu(f)$ and the Lipschitz constant $\Lip(f)$ as:
+\[
+\mu(f) := \inf_{\bhp \in \searchspace} f''(\bhp),~~\Lip(f) := \sup_{\bhp \in \searchspace} |f'(\bhp)|.
+\]
+ \end{definition}
+
+\begin{definition}[Decomposition Rate]\label{def:decomposition_rate}
+Let $\phi_n$ and $\searchspace$ be as in Definition~\ref{def:hp_transfer}, and $\phi_n^\hptrunc$ and $\bhp^\star_\hptrunc(n)$ as in Eq.\ (\ref{eq:decomposition_quantities}). We define the following quantities associated with the decomposition:
+\begin{itemize}
+    \item \textbf{Top-$\hptrunc$ invariance gap:} $ \epsinv(n, \hptrunc) := \frac{\supnorm{\phi_n^\hptrunc - \phi_\infty^\hptrunc}}{\mu(\phi_n^\hptrunc) \vee \mu(\phi_\infty^\hptrunc)}$
+
+    \item \textbf{Residual flatness gap:} $ \epsflat(n, \hptrunc) := \frac{\Lip(\phi_n^{-\hptrunc})}{\mu(\phi_n)} + \frac{\Lip(\phi_\infty^{-\hptrunc})}{\mu(\phi_\infty)}$
+
+    \item \textbf{Decomposition objective:} $\decompobj(\hptrunc) := 2 \sqrt{\epsinv(n, \hptrunc) } + \epsflat(n, \hptrunc)$
+    
+    \item \textbf{Decomposition HP gap:}  $ t_n := \min_{\hptrunc} \decompobj(\hptrunc)$ $\mathrm{s.t.}$ $\mu(\phi_n^\hptrunc) \wedge \mu(\phi_\infty^\hptrunc) > 0$.
+\end{itemize}
+\end{definition}
+The decomposition HP gap $t_n$ is defined to be a natural upper bound on the HP gap $b_n$ as we show in Proposition \ref{prop:fast_transfer} which makes use of Lemmas \ref{lem:sc_unif_perturb} and \ref{lem:sc_deriv_perturb}. This upper bound is obtained by choosing an optimal HP dependent truncation index $\hptrunc^\star_n$ minimizing $\decompobj(\hptrunc)$ such that $\epsinv(n, \hptrunc^\star_n)$ which quantifies top-$\hptrunc$ invariance and $\epsflat(n, \hptrunc^\star_n)$ which quantifies residual flatness are both appropriately small. Note that $t_n$ is well-defined for $n$ large enough because we can take $\hptrunc \equiv n$ and from the assumptions of Definition \ref{def:hp_transfer} both $\phi_n$ and $\phi_\infty$ are strongly convex.
+\begin{proposition}\label{prop:fast_transfer}
+Assume the setting of Definition \ref{def:hp_transfer} where the local strong convexity is global. The decomposition HP gap $t_n$ in Definition \ref{def:decomposition_rate} satisfies $t_n \geq b_n$ where $b_n$ is the HP gap from Definition \ref{def:convergent_quantities}.
+\end{proposition}
+
+We remark that we introduce the quantity $t_n$ primarily as a theoretical quantity for conceptual purposes. The quantity $t_n$ will be small when top-$\hptrunc$ invariance and residual flatness holds and since $t_n \geq b_n$ this will imply $b_n$ is small as well. We also note that it is natural to chose the optimal truncation index $\hptrunc^\star_n$ used in $t_n$ to be a function of the width $n$. This is because as $n \to \infty$ we expect $b_n \to 0$ and so it is desirable that $t_n \to 0$ as well which will not be the case if we used a fixed $\hptrunc$ because $\epsflat$ in $\decompobj(\hptrunc)$ will converge to a non-zero value. Overall, one can view $t_n$ being small\footnote{Relative to the bound on $b_n$ implied solely by $a_n$ (see Proposition \ref{prop:basic_rate}).} as an explicit sufficient condition for fast transfer. We conjecture that (some version of) this condition holds in practice when training neural networks on natural data with optimizers like Adam or SGD. For future work, it would be interesting to provide natural settings where such a formal statement is provably true.
+
+To prove Proposition \ref{prop:fast_transfer} we will first need a perturbation result similar to Lemma \ref{lem:sc_unif_perturb}.
+\begin{lemma}\label{lem:sc_deriv_perturb}
+    Let $f : \searchspace \to \R$ and $g : \searchspace \to \R$ such that $f$ is $\growthconst$ strongly-convex and $\sup_{\bx \in \searchspace} |g'(\bx)| \leq \varepsilon$. Let $\bx^\star = \argmin_{\bx \in \searchspace} f(\bx)$ and $\tilde{\bx} = \argmin_{\bx \in \searchspace} f(\bx) + g(\bx)$. Then
+    \[
+        \norm{\bx^\star - \tilde{\bx}} \leq \frac{\varepsilon}{\growthconst}.
+    \]
+\end{lemma}
+\begin{proof}
+    By first order optimality we have $f'(\tilde{\bx}) + g'(\tilde{\bx})$, hence $|f'(\tilde{\bx})| = |g'(\tilde{\bx})| \leq \varepsilon$. By strong convexity $\growthconst \norm{\tilde{\bx} - \bx^\star} \leq |f'(\tilde{\bx})| \leq \varepsilon$ which gives the result.
+\end{proof}
+\begin{proof}[Proof of Proposition \ref{prop:fast_transfer}]
+    For a given $n$ and $\hptrunc$ such that $\mu(\phi_n^\hptrunc) \wedge \mu(\phi_\infty^\hptrunc) > 0$,
+    \begin{align*}
+        b_n &= \norm{\bhp^\star(n) - \bhp^\star(\infty)}\\
+        &=  \norm{\bhp^\star(n) - \bhp^\star_{\hptrunc}(n) + \bhp^\star_{\hptrunc}(n) - \bhp^\star_{\hptrunc}(\infty) + \bhp^\star_{\hptrunc}(\infty) - \bhp^\star(\infty)}\\
+        &\leq  \norm{\bhp^\star(n) - \bhp^\star_{\hptrunc}(n)}  + \norm{\bhp^\star_{\hptrunc}(n) - \bhp^\star_{\hptrunc}(\infty)} + \norm{\bhp^\star_{\hptrunc}(\infty) - \bhp^\star(\infty)}\\
+        &\leq 2 \sqrt{\epsinv(n, k)} + \norm{\bhp^\star(n) - \bhp^\star_{\hptrunc}(n)}  + \norm{\bhp^\star_{\hptrunc}(\infty) - \bhp^\star(\infty)}\\
+        &\leq 2 \sqrt{\epsinv(n, \hptrunc)} + \epsflat(n, \hptrunc),
+    \end{align*}
+    where the first inequality is the triangle inequality, the second comes from Lemma \ref{lem:sc_unif_perturb}, and the last inequality comes from Lemma \ref{lem:sc_deriv_perturb}. Taking the minimum of the right hand side over valid $\hptrunc$ yields the claim $t_n \geq b_n$.
+\end{proof}
+
+\newpage
+\section{Truncation Index Selection}\label{app:selection_process}
+Empirically finding the minimizer $\hptrunc^\star(n)$ in the definition of $t_n$ (Def.\ \ref{def:decomposition_rate}) is not tractable due to complicated nature of the decomposition objective $\decompobj$. Instead of trying to minimize $\decompobj$, we will use a simpler surrogate process which we outline below. 
+
+Note that given a finite grid of HPs $\{\bhp_1, \ldots, \bhp_{\gridsize}\}$, we only need to produce a truncation index for each $\bhp_i$ with $i \in [\gridsize]$.  Let $\bhptrunc = (\hptrunc_1, \ldots, \hptrunc_{\gridsize})$  represent the vector of these values where $\hptrunc_i = \hptrunc(\bhp_i)$ for $i \in [\gridsize]$. We define $\phi_n^{\bhptrunc}$ to be the set of pointwise evaluations $\{(\bhp_i, \phi_n^{\hptrunc_i}(\bhp_i))\}_{i \in [\gridsize]}$ and identify it with the function obtained from its linear interpolation. Our goal is to return a set of truncation index vectors $\hat{\bhptrunc}(n)$.
+
+Let $n_{\max}$ denote the largest width model under consideration and fix a width $n < n_{\max}$. Consider the following proxy objective with parameters $\btau = (\tau_1, \tau_2)$ and $\tau_1, \tau_2 > 0$,
+\begin{equation}\label{eq:decomp_objective_proxy}
+    \decompobj_{\mathrm{proxy}}(\bhptrunc; \btau) := \frac{1}{\gridsize} \sum\limits_{i \in [\gridsize]} |\phi_n^{\hptrunc_i}(\bhp_i) - \phi_{n_{\max}}^{\hptrunc_i}(\bhp_i)| + \tau_1 \cdot\Lip(\phi_n^{-\bhptrunc}) + \tau_2 \cdot \Lip(\phi_{n_{\max}}^{-\bhptrunc}),
+\end{equation}
+and define its minimizer to be $\bhptrunc^\star(\btau) := \argmin_{\bhptrunc}~\decompobj_{\mathrm{proxy}}(\bhptrunc; \btau)$, which can be found approximately using coordinate descent (see Algorithm \ref{alg:minimize-proxy}). The objective $\decompobj_{\mathrm{proxy}}$ is similar to the objective $\decompobj$ in Definition \ref{def:decomposition_rate}, except that instead of a supnorm we use an average $\ell_1$-norm to promote tractability, we use $n_{\max}$ as an infinite-width proxy, and we absorb all the curvature based scalings $\mu(\cdot)$ into constants $\tau_1, \tau_2$. We will set $\hat{\bhptrunc}(n) = \bhptrunc^\star(\hat{
+\btau})$ for a ``reasonable'' choice of $\hat{\btau}$. In particular, $\hat{\btau}$ will be chosen to be the smallest\footnote{For definiteness, we order $(\tau_1, \tau_2)$ by their sum, breaking ties in the first-coordinate.} $\btau$ so that $\phi_n^{\hptrunc^\star(\btau)}$ and $\phi_{n_{\max}}^{\hptrunc^\star(\btau)}$ are approximately convex and the minimizers are close to the minimizers of $\phi_n$ and $\phi_{n_{\max}}$ respectively, assuming such $\hat{\btau}$ exists. The full details of the process are given in Algorithm \ref{alg:compute-hptrunc-all} in Appendix \ref{app:selection_process}.
+
+In this section we describe our procedure (Algorithm \ref{alg:compute-hptrunc-all}) for selecting $\hat{\bhptrunc}(n)$ (see Section \ref{sec:topk_decomposition}).  We do not claim this procedure is optimal in any sense and emphasize that we are just searching for a valid $\hat{\bhptrunc}(n)$ so that a certain sufficient condition holds qualitatively in order to support our conjecture for fast hyperparameter transfer. For convenience, we only consider the case where we sweep a single HP, although this can be straightforwardly extended. 
+
+As part of our algorithm, we need to measure the convexity and flatness of a function $f$ given a set of pointwise evaluations $\{(\hp_i, y_i)\}_{i=1}^{\gridsize}$ where $\hp_1 < \cdots < \hp_\gridsize$ and $y_i = f(\hp_i)$. For each interior index $i = 2, \ldots, \gridsize - 1$, define the three-point second-derivative estimate
+\[
+\hat{f}''(\hp_i)
+:= 2\!\left(
+\frac{y_{i-1}}{(\hp_{i-1}-\hp_i)(\hp_{i-1}-\hp_{i+1})}
++ \frac{y_i}{(\hp_i-\hp_{i-1})(\hp_i-\hp_{i+1})}
++ \frac{y_{i+1}}{(\hp_{i+1}-\hp_{i-1})(\hp_{i+1}-\hp_i)}
+\right).
+\]
+The \emph{convexity error} is the fraction of interior points with
+negative curvature estimate:
+\begin{equation}\label{eq:conv_error}
+\ConvErr(\{(\hp_i, y_i)\}_{i=1}^{\gridsize})
+:= \frac{1}{\gridsize-2} \sum_{i=2}^{\gridsize-1}
+   \mathbf{1}\!\left\{ \hat{f}''(\hp_i) < 0 \right\}.
+\end{equation}
+The \emph{Lipschitz constant} is the maximum slope magnitude:
+\begin{equation}\label{eq:dlip}
+\Lip(\{(\hp_i, y_i)\}_{i=1}^{\gridsize})
+:= \max_{1 \le i \le \gridsize-1}
+   \left|\,\frac{y_{i+1}-y_i}{\hp_{i+1}-\hp_i}\,\right|.
+\end{equation}
+
+% ========================= MAIN =========================
+\begin{algorithm}[htbp]
+\caption{Compute $\hat{\bhptrunc}(n)$}
+\label{alg:compute-hptrunc-all}
+\DontPrintSemicolon
+\textbf{Input:}
+
+\begin{tabular}{@{}l p{0.72\linewidth}}
+\quad$\mathcal N$ & set of widths, with $n_{\max}=\max \mathcal N$ \\
+\quad$\{\hp_i\}_{i=1}^{\gridsize}$ & grid of $\gridsize$ hyperparameter points \\
+\quad$\mathcal T$ & candidate list of $\tau$ values \\
+\quad$\varepsilon_{\mathrm{cvx}},\ \varepsilon_{\mathrm{amin}}$ & tolerances (convexity, argmin proximity) \\
+\quad$\Phi_n \in \mathbb{R}^{\gridsize \times n}$ & arrays $\phi_n^{k}(\hp_i)$ for each $n \in \mathcal N$
+\end{tabular}
+
+\medskip
+\textbf{Output:} $\hat{\bhptrunc}(n)$ truncation vectors in $[n]^{\gridsize}$ for $n<n_{\max}$, or \textsc{Fail}
+
+\medskip
+
+\begin{enumerate}
+  \item \textbf{Grid:}\quad
+  $\displaystyle
+  \mathcal{G}_{\btau}
+  := \{(\tau_1,\tau_2): \tau_1,\tau_2\in\mathcal T\}
+  \ \text{sorted by}\ \tau_1+\tau_2\ 
+  $
+  \item \textbf{For each $n\in\mathcal N\setminus\{n_{\max}\}$:}
+  \begin{enumerate}
+    \item \textbf{For} $(\tau_1,\tau_2)\in \mathcal{G}_{\btau}$ (in order):
+    \begin{enumerate}
+      \item $\bhptrunc \leftarrow \textsc{MinimizeProxy}(\Phi_n, \Phi_{n_{\max}};\tau_1,\tau_2)$
+            \tcp*{Alg.~\ref{alg:minimize-proxy}; minimizes Eq.~(\ref{eq:decomp_objective_proxy})}
+      \item $E_{\mathrm{cvx}}:=\max\{\mathrm{ConvErr}(\phi_n^{\bhptrunc}),\ \mathrm{ConvErr}(\phi_{n_{\max}}^{\bhptrunc})\}$
+            \tcp*{Eq.~(\ref{eq:conv_error})}
+      \item $a_n:=\arg\min_{\hp} \phi_n^{\hptrunc}$,\quad
+            $a_n^{\mathrm{tot}}:=\arg\min_{\hp} \phi_{n}$;\\
+            \vspace{2mm}
+            $a_{\infty}:=\arg\min_{\hp}\phi_{n_{\max}}^\hptrunc$,\quad
+            $a_{\infty}^{\mathrm{tot}}:=\arg\min_{\hp} \phi_{n_{\max}}$.
+            \\
+            \vspace{2mm}
+            
+            $\Delta:=\max\{|a_n-a_n^{\mathrm{tot}}|,\ |a_{\infty}-a_{\infty}^{\mathrm{tot}}|\}$ \tcp*{argmin proximity}
+      \item \textbf{If} $E_{\mathrm{cvx}}\le \varepsilon_{\mathrm{cvx}}$ \textbf{and} $\Delta\le \varepsilon_{\mathrm{amin}}$,
+            \textbf{set} $\hat{\bhptrunc}(n)\gets \bhptrunc$ and \textbf{break} to the next $n$.
+    \end{enumerate}
+    \item \textbf{If} no pair in $\mathcal{G}_{\btau}$ is accepted, \textbf{set} $\hat{\bhptrunc}(n)\gets \textsc{Fail}$.
+  \end{enumerate}
+\end{enumerate}
+\end{algorithm}
+
+\begin{algorithm}[htbp]
+\caption{Minimize Proxy Objective Eq.\ (\ref{eq:decomp_objective_proxy})}
+\label{alg:minimize-proxy}
+\DontPrintSemicolon
+\textbf{Input:}
+
+\begin{tabular}{@{}l p{0.72\linewidth}}
+\quad$\Phi_n$, $\Phi_{n_{\max}}$& arrays $\phi_n^{k}(\hp_i)$ and $\phi_{n_{\max}}^{k}(\hp_i)$, shapes $\gridsize \times n$ and $\gridsize \times n_{\max}$\\
+\quad$(\tau_1,\tau_2)$ & positive penalty weights
+\end{tabular}
+
+\medskip
+\textbf{Output:} $\bhptrunc^\star \in [n]^{\gridsize}$ (approximate minimizer via coordinate descent)
+
+\medskip
+
+\begin{enumerate}
+  \item \textbf{Initialize:} $\bhptrunc \leftarrow (n/2, \ldots, n/2)$
+  \item \textbf{Repeat} until no coordinate changes:
+    \begin{enumerate}    
+    \item[] \textbf{For} $i=1,\ldots,\gridsize$:
+    \begin{enumerate}
+      \item \emph{Local scores for each $k\in[n]$:}
+            \[
+                \mathrm{score}(k) = \decompobj_{\mathrm{proxy}}(\tilde{\bhptrunc}) \text{ where } \tilde{\bhptrunc} \text{ is } \bhptrunc\text{ with } \hptrunc_i \text{ switched to } k
+            \] 
+      \item \emph{Coordinate update:} $\hptrunc_i \leftarrow \argmin_{k \in [n]}~\mathrm{score}(k)$.
+    \end{enumerate}
+    \end{enumerate}
+  \item \textbf{Return} $\bhptrunc^\star :=(\hptrunc_i)_{i=1}^{\gridsize}$.
+\end{enumerate}
+\end{algorithm}
+
+\newpage
+
+\section{Experimental Details and Additional Experiments}
+\label{app:exp_details}
+
+\subsection{\texorpdfstring{$\mu$P MLP Experiments}{muP MLP Experiments}}
+\label{app:two-layer-relu}
+ 
+\paragraph{Experiment Setting.} 
+We consider regression with shallow ReLU network: $f(\bx) = \sum_{i=1}^n a_i \sigma(\langle \bw_i,\bx\rangle + b_i)$, where we aim to tune the learning rate $\eta$ that minimizes the validation squared loss. 
+We take the target function to be the following multi-index model on isotropic Gaussian data,
+\[
+y = \sqrt{\textstyle \frac{d}{4k} \sum_{i=1}^k x_i^2}, \quad 
+\bx\sim\mathcal{N}(0,4d^{-1}\bI_d). 
+\]
+We set $k=15$, and $d=64, n=2^{15}$. 
+We run the Adam optimizer for $T=2^{14}$ steps with batch size $256$ to minimize the squared loss. The initialization and learning rate are set according to $\mu$P. As shown in Figure~\ref{fig:counter-example}, the optimal learning rate steadily approaches $\sim 10^{-1}$ before an abrupt jump at width $n=8192$. 
+
+\begin{figure}[!htb]
+% \vspace{-4mm} 
+\centering
+\begin{subfigure}[t]{0.49\linewidth}
+\centering
+{\includegraphics[height=0.64\textwidth]{figures/two_layer_ReLU_k_15_d_64_regression_loss_prefactor1.png}}  \vspace{-1mm}
+\caption{\small Identical all-layer learning rate (Figure~\ref{fig:counter-example}).}
+\label{fig:ReLU-same-lr}
+\end{subfigure}%
+\begin{subfigure}[t]{0.49\linewidth}
+\centering 
+{\includegraphics[height=0.64\textwidth]{figures/two_layer_ReLU_k_15_d_64_regression_loss_prefactor002.png}}  \vspace{-1mm}
+\caption{\small Different layer-wise learning rate.} 
+\label{fig:ReLU-layer-wise-lr}
+\end{subfigure}%
+% \vspace{-1mm} 
+\caption{\small Learning Gaussian $k$-index model with two-layer ReLU network under $\mu$P. The HP of interest is the Adam learning rate. \textbf{Left:} default $\mu$P implementation with the same learning rate for the first- and second-layer parameters. \textbf{Right:} layer-wise learning rate where the second-layer learning rate is divided by $50$. Observe that the original $\mu$P yields a ``bimodal'' HP curve, whereas layer-wise HP leads to more stable transfer.} 
+% \vspace{-1mm}
+\label{fig:two-layer-ReLU-MIM} 
+\end{figure} 
+
+\paragraph{Layer-wise Learning Rate.}
+One possible explanation of the ``bimodal'' learning rate curves in Figure~\ref{fig:counter-example} (duplicated in Figure~\ref{fig:ReLU-same-lr}) is that there exist different mechanisms to lower the loss that may dominate learning at different widths and require separate HP tuning. In our two-layer ReLU network, while the first-layer neurons can rotate and grow in norm, the second-layer parameters can only affect the norm (see e.g., discussion on Wasserstein vs.~Fisher-Rao dynamics for mean-field neural networks \citep{chizat2022sparse}). There is no reason \textit{a priori} that the optimal learning rate for the two layers coincide under mean-field / $\mu$P, hence if one layer start to contribute more to the loss decrease at certain width, we may observe a shift in the optimal learning rate that reflects the shift in the dominant mechanism (e.g., for learning non-polynomial multi-index models, training the second-layer parameters alone can achieve low loss only at \textit{exponential} width). In such scenarios, we expect that this bimodal behavior can be remedied by the use of layer-wise learning rate.  
+
+This reasoning is empirically supported by Figure~\ref{fig:ReLU-layer-wise-lr} where we divide the second-layer learning rate by 50. We observe that with the introduced multiplier, the learning rate curves now become roughly unimodal; moreover, the model achieves lower validation loss than the original tied learning rate setting (Figure~\ref{fig:ReLU-same-lr}). 
+We leave a more systematic investigation of layer-wise learning rate as future work. 
+
+\newpage
+\subsection{Llama Experiments}\label{app:llama_exps}
+For our Llama experiments we use the following Llama architecture.
+
+\begin{table}[ht]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{$\mu$P Base Dimension} & 128 \\
+\addlinespace
+\textbf{Normalization} & RMSNorm (prelayer norm) \\
+\addlinespace
+\textbf{Hidden Layers} & 4 \\
+\addlinespace
+\textbf{Attention Heads} & 8 \\
+\addlinespace
+\textbf{Feedforward Network} & SwiGLU\\
+\addlinespace
+\textbf{Feedforward Dimension} & 4$\times$ Embedding Dimension\\
+\addlinespace
+\textbf{Rotary Embedding} & $\theta = 10000$ \\
+\bottomrule
+\end{tabular}
+\caption{Llama architecture configuration used in all experiments.}
+\end{table}
+
+
+We use the following schedule for the EMA to preserve performance and linearization accuracy.
+
+\paragraph{EMA Warmup}  
+We warm up the EMA decay coefficient \(\alpha_t\) linearly from \(\alpha_{\mathrm{start}}=0.98\) to \(\alpha_{\mathrm{end}}=0.9995\) over 2000 steps in the effective window \((1-\alpha_t)^{-1}\). To capture early-training variation without increasing linearization error, we subsample the EMA trajectory every \(\tau\) steps, with \(\tau\) itself warmed up linearly from \(\tau_{\mathrm{start}}=2\) to \(\tau_{\mathrm{end}}=10\) over the same period.
+
+\subsubsection{Llama Adam LR}\label{app:llama_adam_lr}
+\paragraph{Llama Adam Configuration}
+Below is the default setup for all Llama experiments using Adam.  
+
+\begin{table}[ht]
+\centering
+\small
+% increase row height
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dataset}       & WikiText-103                                        \\ 
+\addlinespace
+\textbf{Epochs}        & 1                                                   \\ 
+\addlinespace
+\textbf{Optimizer}     & Adam ($\beta_1=0.9,\ \beta_2=0.999$) \\
+
+\addlinespace
+\textbf{Batch Size}     & 128 \\
+
+\addlinespace
+\textbf{Context Length}     & 128 \\
+
+\addlinespace
+\textbf{LR Schedule}   & WSD with 4\% linear warmup \& 20\% cooldown         \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\paragraph{LR Grid Search}
+\begin{itemize}[nosep,leftmargin=*]
+  \item \(\displaystyle \mathrm{LR} \in \{1.0,\,1.4,\,2.0,\,2.8,\,4.0,\,4.8,\,5.7,\,6.7,\,8.0\}\times10^{-3}\)
+  
+  \vspace{2mm}
+  
+  \item \(n \in \{128,\,256,\,512,\,1024,\,2048\}\)
+\end{itemize}
+
+\noindent 
+% All curvature computations are done in \(\log_2(\mathrm{LR})\), since we sweep the peak learning rate on a log-grid. 
+The loss \(\mathcal{L}\) is evaluated on the validation split. We average runs over 3 random seeds.
+
+\subsubsection{\texorpdfstring{Llama Adam $\beta_1$ and $\beta_2$}{Llama Adam beta1 and beta2}}\label{app:adam_betas}
+We repeat the same experiments from Appendix \ref{app:llama_adam_lr} for the Adam $\beta$ hyperparameters, fixing $\mathrm{LR} = 0.004$. For the $\beta_1$ experiment, we perform a sweep over $\beta_1$ with $\beta_2 = 0.999$ fixed and for the $\beta_2$ experiment we fix $\beta_1 = 0.9$ and sweep over $\beta_2$. The grids we used for the sweeps are:
+\begin{itemize}
+    \item $\beta_1 \in \{0.63,\, 0.78,\, 0.86,\, 0.92,\, 0.95\}$
+    \item $\beta_2 \in \{0.95,\, 0.98,\, 0.99,\, 0.995,\, 0.998,\, 0.9999\}$
+\end{itemize}
+The sweeps are performed in logspace in the effective window size $(1 - \beta)^{-1}$. 
+
+\begin{figure}[htpb]
+    \centering
+    \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_adam_beta1_step_7185.pdf}
+        \caption{Adam $\beta_1$ sweep.}
+        \label{fig:ema_adam_beta1_step_7185}
+    \end{subfigure}
+    \hspace{2.5mm}
+     \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_adam_beta2_step_7185.pdf}
+        \caption{Adam $\beta_2$ sweep.}
+        \label{fig:ema_adam_beta2_step_7185}
+    \end{subfigure}
+    \caption{\small Same Llama and WikiText setup as Fig.~\ref{fig:ema_llama_step_7185}, but sweeping Adam $\beta_1$ and $\beta_2$. \textbf{Left:} Smaller $\beta_1$ values increase the linearization error. \textbf{Right:} The linearization error is small for all $\beta_2$. For large enough $\beta_2$ the loss is near-optimal and transfer is nearly perfect up to harmless fluctuations in the optimal $\beta_2$.}
+    \label{fig:ema_llama_step_7185_betas}
+\end{figure}
+The analogs of Figures \ref{fig:ema_adam_lr_step_7185}, \ref{fig:top_k_across_widths}, \ref{fig:resids_across_width} are presented for $\beta_1$ in Figures \ref{fig:ema_adam_beta1_step_7185}, \ref{fig:adam_beta1_top_k_across_widths}, \ref{fig:adam_beta1_resids_across_widths} respectively and for $\beta_2$ in Figures \ref{fig:ema_adam_beta2_step_7185}, \ref{fig:adam_beta2_top_k_across_widths}, \ref{fig:adam_beta2_resids_across_widths} respectively. 
+We note that in this particular setting the performance is insensitive to $\beta_2$ except when it is too small. 
+The computed values of $\hat{\bhptrunc}(n)$ shown in Figure \ref{fig:ema_adam_combined_k_vec} are fairly similar for all the hyperparameters, suggesting that the dimension of this invariant subspace may be mostly data and architecture dependent. It will be interesting to perform similar experiments for other HPs such as weight decay and if our decomposition viewpoint can shed insight onto HPs which do not show fast transfer.
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_adam_beta1_dynamic_k_perdim_topk_total_step_7185.pdf}
+    \caption{\small \textbf{Left: } Total loss curves $\phi_n$ across widths for Adam $\beta_1$. \textbf{Right:} Corresponding top-$\hptrunc_n$ losses $\phi_n^{\hptrunc_n}$ (blue dashed) and $\phi_\infty^{\hptrunc_n}$ (purple dashed), similar to Figure \ref{fig:top_k_across_widths}.}
+    \label{fig:adam_beta1_top_k_across_widths}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_adam_beta1_dynamic_k_perdim_residuals_step_7185.pdf}
+    \caption{\small Residual losses around the top-$\hptrunc_n$ minimizers for Adam $\beta_1$, which are nearly flat as in Figure \ref{fig:resids_across_width}.}
+    \label{fig:adam_beta1_resids_across_widths}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_adam_beta2_dynamic_k_perdim_topk_total_step_7185.pdf}
+   \caption{\small \textbf{Left:} Total loss curves $\phi_n$ across widths for Adam $\beta_2$. \textbf{Right:} Corresponding top-$\hptrunc_n$ losses $\phi_n^{\hptrunc_n}$ (blue dashed) and $\phi_\infty^{\hptrunc_n}$ (purple dashed), similar to Figure \ref{fig:top_k_across_widths}.}
+   \vspace{5mm}
+    \label{fig:adam_beta2_top_k_across_widths}
+\end{figure}
+
+
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_adam_beta2_dynamic_k_perdim_residuals_step_7185.pdf}
+    \caption{\small Residual losses around the top-$\hptrunc_n$ minimizers for Adam $\beta_2$, which are nearly flat as in Figure \ref{fig:resids_across_width}.}
+    \vspace{5mm}
+    \label{fig:adam_beta2_resids_across_widths}
+\end{figure}
+
+
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_adam_combined_k_vec.pdf}
+    \caption{\small Computed values of $\hat{\bhptrunc}(n)$ for sweeps over the Adam LR, $\beta_1$, and $\beta_2$.} 
+    % \vspace{2mm}
+    \label{fig:ema_adam_combined_k_vec}
+\end{figure}
+
+
+\newpage
+~
+\newpage
+
+\subsubsection{Llama Muon}\label{app:llama_muon}
+As in Appendix \ref{app:llama_adam_lr}, we train a Llama-style transformer architecture  with a warmup stable (WSD) learning rate schedule on WikiText-103, but using the Muon~\citep{jordan2024muon} optimizer (see Appendix \ref{app:muon}) instead of Adam. The training configuration is shown below. The learning rate sweeps are shown in Figure~\ref{fig:ema_muon_lr_step_7185}.
+
+
+\paragraph{Llama Muon Configuration.}
+Below is the setup used for the Muon training.  
+
+\begin{table}[ht]
+\centering
+\small
+% increase row height
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dataset}       & WikiText-103                                        \\ 
+\addlinespace
+\textbf{Epochs}        & 1                                                   \\ 
+\addlinespace
+\textbf{Hidden layers} & 4                                                   \\ 
+\addlinespace
+\textbf{Optimizer.}     & Muon ($\beta=0.95$, Adam LR$=0.004$, $\beta_1 = 0.9$, $\beta_2 = 0.999$) \\ 
+\addlinespace
+\textbf{Newton-Schulz Iterations} & 5 \\
+\addlinespace
+\textbf{Batch Size} & 128 \\
+\addlinespace
+\textbf{LR Schedule}   & WSD with 4\% linear warmup \& 20\% cooldown         \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{LR Grid Search}
+\begin{itemize}[nosep,leftmargin=*]
+  \item \(\displaystyle \mathrm{LR} \in \{0.1,\,0.2,\,0.4,\,0.57,\,0.8,1.1,1.6,1.9\}\times10^{-2}\)
+  
+  \vspace{2mm}
+  
+  \item \(n \in \{128,\,256,\,512,\,1024,\,2048\}\)
+\end{itemize}
+
+% \bigskip
+
+\subsection{Llama Dion}\label{app:llama_dion}
+
+As in Appendix \ref{app:llama_muon}, we train a Llama-style transformer with a warmup stable (WSD) learning rate schedule on WikiText-103, but using the Dion~\citep{ahn2025dion} optimizer (see Appendix \ref{app:dion}). The training configuration is shown below. We consider two different configurations of the Dion rank hyperparameter $r$. In the \textbf{bounded rank} setting we set $r = \min(128, n / 2)$ and in the \textbf{proportional rank} setting we take $r = n / 2$. The learning rate sweeps for the bounded rank setting is shown in Figure \ref{fig:ema_llama_step_7185_dion_bounded_rank}. As we can see, the transfer is nearly perfect. On the other hand, in the proportional rank setting shown in Figure \ref{fig:ema_llama_step_7185_dion_high_rank}, we see the same imperfect transfer that we saw for Muon, but also that the performance at large width benefits from larger $r$. From Figure \ref{fig:ema_dion_bounded_rank_lr_topk_profile}, we see that in the bounded rank setting, the $\phi_n^k$ curves look more closer to the Adam profile in Figure \ref{fig:adam_topk_profile}. In particular, for $n \in \{1024, 2048\}$ the curves are nearly overlapping. However, there is still not the strong top-$k$ invariance that we saw with Adam which holds across all widths, suggesting that there may be a different notion of invariance for Dion. In contrast, in Figure \ref{fig:ema_dion_high_rank_lr_topk_profile}, we see that the $\phi_n^k$ curves strongly resemble those of Muon in Figure \ref{fig:muon_topk_profile}. It is an interesting future work to pin down a more appropriate notion of invariance and to understand what causes the imperfect transfer for Muon and proportional rank Dion.
+
+% \paragraph{Llama Dion Configuration}
+% Below is the setup used for the Dion training.  
+
+\begin{table}[ht]
+\centering
+\small
+% increase row height
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dataset}       & WikiText-103                                        \\ 
+\addlinespace
+\textbf{Epochs}        & 1                                                   \\ 
+\addlinespace
+\textbf{Hidden layers} & 4                                                   \\ 
+\addlinespace
+\textbf{Optimizer}     & Dion ($\mu=0.95$, Adam LR$=0.004$, $\beta_1 = 0.9$, $\beta_2 = 0.999$) \\ 
+\addlinespace
+\textbf{Newton-Schulz Iterations} & 5 \\
+\addlinespace
+\textbf{Batch Size} & 128 \\
+\addlinespace
+\textbf{LR Schedule}   & WSD with 4\% linear warmup \& 20\% cooldown         \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+% \paragraph{LR Grid Search}
+\begin{itemize}[nosep,leftmargin=*]
+  \item \(\displaystyle \mathrm{LR} \in \{0.1,\,0.2,\,0.4,\,0.57,\,0.8,1.1,1.6,1.9\}\times10^{-2}\)
+  
+  \vspace{2mm}
+  
+  \item \(n \in \{128,\,256,\,512,\,1024,\,2048\}\)
+\end{itemize}
+
+\begin{figure}[htbp]
+\vspace{-5mm}
+    \centering
+    \begin{subfigure}[t]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_dion_bounded_rank_lr_step_7185.pdf}
+        \caption{EMA loss (solid) and linearized loss (dashed).}
+        \label{fig:ema_dion_bounded_rank_lr_step_7185}
+    \end{subfigure}
+    \hspace{2.5mm}
+     \begin{subfigure}[t]{0.4\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/overlay_ema_dion_bounded_rank_step_7185.pdf}
+        \caption{Scaling law for the EMA loss.}
+        \label{fig:ema_dion_bounded_rank_step_7185_scaling_law}
+    \end{subfigure}
+    \caption{\small Same model and dataset as Fig.\ \ref{fig:ema_llama_step_7185}, but trained with Dion using a bounded rank $r = \min(128, n / 2)$. \textbf{Left:} EMA and linearized losses coincide. \textbf{Right:} EMA loss versus width $n$ for the learning rate choices $\hp^\star(n)$ [blue dots] and $\hp^\star(128)$ [orange triangles]. The transfer is nearly perfect in contrast with Muon (Fig. \ref{fig:ema_llama_step_7185_muon}) and Dion with proportional rank $r = n / 2$ (Fig.\ \ref{fig:ema_llama_step_7185_dion_high_rank}).}
+    \label{fig:ema_llama_step_7185_dion_bounded_rank}
+\end{figure}
+
+\begin{figure}[htbp]
+% \vspace{-5mm}
+    \centering
+    \begin{subfigure}[t]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_dion_high_rank_lr_step_7185.pdf}
+        \caption{EMA loss (solid) and linearized loss (dashed).}
+        \label{fig:ema_dion_high_rank_lr_step_7185}
+    \end{subfigure}
+    \hspace{2.5mm}
+     \begin{subfigure}[t]{0.4\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/overlay_ema_dion_high_rank_step_7185.pdf}
+        \caption{Scaling law for the EMA loss.}
+        \label{fig:ema_dion_high_rank_step_7185_scaling_law}
+    \end{subfigure}
+    \caption{\small Same model and dataset as Fig.\ \ref{fig:ema_llama_step_7185}, but trained with Dion using proportional rank $r = n / 2$. \textbf{Left:} EMA and linearized losses coincide. \textbf{Right:} EMA loss versus width $n$ for the learning rate choices $\hp^\star(n)$ [blue dots] and $\hp^\star(128)$ [orange triangles]. The transfer is imperfect, similar to Muon (Fig. \ref{fig:ema_llama_step_7185_muon}) and in contrast with Dion with bounded rank $r = \min(128, n / 2)$ (Fig.\ \ref{fig:ema_llama_step_7185_dion_bounded_rank}).}
+    \label{fig:ema_llama_step_7185_dion_high_rank}
+\end{figure}
+
+\begin{figure}[htbp]
+\vspace{2.5mm}
+    \centering
+    \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_dion_bounded_rank_lr_topk_profile.pdf}
+        \caption{$\phi_n^k$ for bounded rank $r = \min(128, n / 2)$.}
+        \label{fig:ema_dion_bounded_rank_lr_topk_profile}
+    \end{subfigure}
+    \hspace{2.5mm}
+     \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_dion_high_rank_lr_topk_profile.pdf}
+        \caption{$\phi_n^k$ for proportional rank $r = n / 2$.}
+        \label{fig:ema_dion_high_rank_lr_topk_profile}
+    \end{subfigure}
+    \caption{\small \textbf{Left:} The top-$k$ loss curves $\phi_n^k$ are more invariant in the bounded rank setting, but still appear qualitatively different from Adam and SGD. \textbf{Right:} The top-$k$ loss curves $\phi_n^k$ in the proportional rank setting look qualitatively similar to those for Muon (Fig.\ \ref{fig:muon_topk_profile}).}
+    \label{fig:ema_dion_topk_profile}
+\end{figure}
+
+
+
+
+
+
+\newpage
+\subsection{GPT-2 Experiments}\label{app:gpt}
+
+\rev{For our GPT-2 experiments we use the following architecture with trainable position embeddings.}
+
+\begin{table}[ht]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{$\mu$P Base Dimension} & 128 \\
+\addlinespace
+\textbf{Normalization} & RMSNorm (prelayer norm) \\
+\addlinespace
+\textbf{Hidden Layers} & 4 \\
+\addlinespace
+\textbf{Attention Heads} & 8 \\
+\addlinespace
+\textbf{Feedforward Network} & GeLU\\
+\addlinespace
+\textbf{Feedforward Dimension} & 4$\times$ Embedding Dimension\\
+\bottomrule
+\end{tabular}
+\caption{GPT-2 architecture configuration used in all experiments.}
+\label{tab:gpt2}
+\end{table}
+
+\paragraph{EMA Warmup}  
+We warm up the EMA decay coefficient \(\alpha_t\) linearly from \(\alpha_{\mathrm{start}}=0.995\) to \(\alpha_{\mathrm{end}}=0.996\) over 2000 steps in the effective window \((1-\alpha_t)^{-1}\). We subsample the EMA trajectory every \(\tau\) steps, with \(\tau\) itself warmed up linearly from \(\tau_{\mathrm{start}}=1\) to \(\tau_{\mathrm{end}}=2\) over the same period.
+
+\subsubsection{GPT-2 Adam LR}\label{app:gpt_adam_lr}
+Similar to the experiments in Section \ref{sec:tf_experiments}, we investigate transfer of the Adam LR, but using the GPT-2 architecture in Table \ref{tab:gpt2} and the FineWeb dataset.
+\paragraph{GPT-2 Adam Configuration}
+Below is the setup for GPT-2 experiments using Adam.  
+
+\begin{table}[ht]
+\centering
+\small
+% increase row height
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dataset}       & FineWeb                                        \\ 
+\addlinespace
+\textbf{Tokens}        & 1B                                                   \\ 
+\addlinespace
+\textbf{Optimizer}     & Adam ($\beta_1=0.9,\ \beta_2=0.95$) \\
+
+\addlinespace
+\textbf{Batch Size}     & 256 \\
+
+\addlinespace
+\textbf{Context Length}     & 1024 \\
+
+\addlinespace
+\textbf{LR Schedule}   & WSD with 4\% linear warmup \& 20\% cooldown         \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\paragraph{LR Grid Search}
+\begin{itemize}[nosep,leftmargin=*]
+  \item \(\displaystyle \mathrm{LR} \in \{0.3,\, 0.6,\, 0.8,\, 1.2,\, 1.7,\, 2.4,\, 3.4
+\}\times10^{-2}\)
+  
+  \vspace{2mm}
+  
+  \item \(n \in \{128,\,256,\,512,\,1024,\,2048\}\)
+\end{itemize}
+The loss \(\mathcal{L}\) is evaluated on the validation split. We average runs over 3 random seeds.
+
+The analogs of Figures \ref{fig:ema_llama_step_7185}, \ref{fig:top_k_across_widths}, \ref{fig:resids_across_width} are presented for our GPT-2 setup in Figures \ref{fig:ema_gpt_step_2860_adam}, \ref{fig:adam_gpt_top_k_across_widths}, \ref{fig:adam_gpt_resids_across_widths} respectively. As observed in the Llama experiments, we can observe the faithfulness of the linearization and nearly perfect transfer in Figure \ref{fig:ema_gpt_step_2860_adam}. In Figures \ref{fig:adam_gpt_top_k_across_widths} and \ref{fig:adam_gpt_resids_across_widths} we see that top-$k$ invariance and residual flatness hold approximately. Although the decomposition is not as clean as it was for the Llama architecture, the trends are still suggestive and provide qualitative support for our overall conjecture. In particular, we see essentially the same qualitative profile of $\phi_n^k$ in Figure \ref{fig:gpt_adam_topk_profile} which we saw for Figure \ref{fig:adam_topk_profile}. Interestingly however, we see that $\hat{\hptrunc}(n)$ is much smaller in this setting. 
+Another difference we observe is that the top-$k$ invariance seems to break down for small learning rates and small widths in the GPT-2 setting, which did not appear to be the case for the Llama architecture. We note that the conditions for our fast transfer conjecture only require invariance to hold for nearly optimal HPs, and we speculate that invariance can indeed break for suboptimal HPs. We defer a more quantitative evaluation of this phenomenon to future work. 
+% In particular, if the learning rate is too small then it is possible that the networks ``sees'' the tail components during optimization. For large learning rates, it is possible that finite-width noise is amplified and more ``chaotic'' dynamics play a role. These claims are mostly speculative however, and will need more rigorous confirmation. 
+
+
+\begin{figure}[!htbp]
+\vspace{-8mm}
+    \centering
+    \begin{subfigure}[t]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_gpt_adam_lr_step_2860.pdf}
+        \caption{EMA loss (solid) and linearized loss (dashed).}
+        \label{fig:ema_gpt_adam_lr_step_2860}
+    \end{subfigure}
+    \hspace{2.5mm}
+     \begin{subfigure}[t]{0.4\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/overlay_ema_gpt_adam_step_2860.pdf}
+        \caption{Scaling law for the EMA loss.}
+        \label{fig:ema_gpt_adam_step_2860_scaling_law}
+    \end{subfigure}
+    \vspace{-1mm}
+    \caption{\small Training a 4-layer GPT-2 transformer on FineWeb1B with Adam. \textbf{Left:} EMA and linearized losses nearly coincide. \textbf{Right:} EMA loss across widths under the width-dependent optimal learning rate $\hp^\star(n)$ [blue dots] and the fixed width-128 choice $\hp^\star(128)$ [orange triangles] shows near-perfect transfer across widths.}
+    \label{fig:ema_gpt_step_2860_adam}
+\end{figure}
+
+\begin{figure}[!htb]
+% \vspace{-5mm}
+    \centering
+    \includegraphics[width=0.88\linewidth]{arxiv_figures/gpt_ema_adam_lr_kvec_step_2860.pdf}
+    \vspace{-1.5mm}
+    \caption{\small\textbf{Left:} Computed values of $\hat{\hptrunc}(n)$ using Algorithm \ref{alg:compute-hptrunc-all}. \textbf{Right:} Top-$k$ losses $\phi_n^k$ for $\mathrm{LR} = 0.008$. The curves descend rapidly with $k$ and overlap over different $n$ for an intermediate range of $k$ where top-$k$ invariance holds. The profile is qualitatively similar to Figure \ref{fig:adam_topk_profile}.}
+    \label{fig:gpt_adam_topk_profile}   
+\end{figure}
+
+
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_gpt_adam_lr_dynamic_k_perdim_topk_total_step_2860.pdf}
+    \vspace{-1.5mm}
+    \caption{\small \textbf{Left: } Total loss curves $\phi_n$ across widths for GPT-2 experiments with Adam. \textbf{Right:} Corresponding top-$\hptrunc_n$ losses $\phi_n^{\hptrunc_n}$ (blue dashed) and $\phi_\infty^{\hptrunc_n}$ (purple dashed), similar to Figure \ref{fig:top_k_across_widths}.}
+    \label{fig:adam_gpt_top_k_across_widths}
+\end{figure}
+
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/gpt_ema_adam_lr_dynamic_k_perdim_residuals_step_2860.pdf}
+    \vspace{-1.5mm}
+    \caption{\small Residual losses around the top-$\hptrunc_n$ minimizers for GPT-2 with Adam, which are nearly flat as in Figure \ref{fig:resids_across_width}.}
+    \vspace{-10mm}
+    \label{fig:adam_gpt_resids_across_widths}
+\end{figure}
+
+\newpage
+
+\subsubsection{GPT-2 Muon LR}\label{app:gpt_muon_lr}
+Next we perform a learning rate sweep for the Muon optimizer (Appendix \ref{app:muon}) in our GPT-2 setup (Table \ref{tab:gpt2}).
+\paragraph{GPT-2 Muon Configuration}
+Below is the setup for GPT-2 experiments using Muon.  
+
+\begin{table}[ht]
+\centering
+\small
+% increase row height
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dataset}       & FineWeb                                        \\ 
+\addlinespace
+\textbf{Tokens}        & 1B                                                   \\ 
+\addlinespace
+\textbf{Optimizer}     & Muon (Adam LR = $0.01, \beta_1=0.9, \beta_2=0.95$) \\
+\addlinespace
+\textbf{Newton-Schulz Iterations} & 5 \\
+\addlinespace
+\textbf{Batch Size}     & 256 \\
+\addlinespace
+\textbf{Context Length}     & 1024 \\
+
+\addlinespace
+\textbf{LR Schedule}   & WSD with 4\% linear warmup \& 20\% cooldown         \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\paragraph{LR Grid Search}
+\begin{itemize}[nosep,leftmargin=*]
+  \item \(\displaystyle \mathrm{LR} \in \{0.3,\, 0.6,\, 1.2,\, 2.0,\, 4.0,\, 6.0,\,12.0
+\}\times10^{-2}\)
+  
+  \vspace{2mm}
+  
+  \item \(n \in \{128,\,256,\,512,\,1024,\,2048\}\)
+\end{itemize}
+The loss \(\mathcal{L}\) is evaluated on the validation split. We average runs over 3 random seeds.
+
+The result of the sweep is shown in Figure \ref{fig:ema_gpt_muon_step_3820} which is the analog of Figure \ref{fig:ema_llama_step_7185_muon}. We see that although the optimal learning rate seems to shift non-trivially (Figure \ref{fig:ema_gpt_muon_lr_step_3820}), the Muon optimizer produces ``flat'' hyperparameter curves so that suboptimal learning rate does not affect the transfer performance much (Figure \ref{fig:ema_gpt_muon_step_3820_scaling_law}). However, it is still possible that the transfer suboptimality will become more visible for larger widths.
+
+In Figure \ref{fig:ema_muon_lr_multiple_topk_profile}, we plot the top-$k$ loss profiles $\phi_n^k$ for $\mathrm{LR} \in \{0.001,\, 0.012\}$. We see that for the smaller learning rate the profile looks very similar to Figure \ref{fig:muon_topk_profile}. Interestingly however, for the larger learning rate, which is closer to the optimal learning rate, we see that the profile looks a lot closer to that observed when using the Adam optimizer. One potential explanation is that the dynamics might be more heavily dominated by the layers which use the Adam optimizer for larger learning rates. It is possible that this is linked with the stable Muon transfer observed in this setting as opposed to worse transfer performance observed in Figure \ref{fig:ema_muon_lr_step_7185}. More careful investigation is required to disentangle these effects, potentially by only training the layers which undergo the orthogonalized updates and ablating the number of Newton-Schulz iterations.
+
+\begin{figure}[!htbp]
+    \centering
+    \begin{subfigure}[t]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/ema_gpt_muon_lr_step_3820.pdf}
+        \caption{EMA loss (solid) and linearized loss (dashed).}
+        \label{fig:ema_gpt_muon_lr_step_3820}
+    \end{subfigure}
+    \hspace{2.5mm}
+     \begin{subfigure}[t]{0.4\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{arxiv_figures/overlay_ema_gpt_muon_step_3820.pdf}
+        \caption{Scaling law for the EMA loss.}
+        \label{fig:ema_gpt_muon_step_3820_scaling_law}
+    \end{subfigure}
+    \caption{\small Same model and dataset as Fig.~\ref{fig:ema_gpt_step_2860_adam}, but trained with Muon. Although the optimal learning fluctuates across width, the insensitivity to learning rate causes transfer to be only slightly suboptimal for the given widths. \textbf{Left:} EMA and linearized losses nearly coincide. \textbf{Right:} EMA loss across widths using the two learning rate choices $\hp^\star(n)$ [blue dots] and $\hp^\star(128)$ [orange triangles].}
+    \label{fig:ema_gpt_muon_step_3820}
+\end{figure}
+
+\begin{figure}[!htpb]
+    \centering
+    \includegraphics[width=0.9\linewidth]{arxiv_figures/ema_muon_lr_multiple_topk_profile.pdf}
+    \caption{\small The qualitative behavior of the top-$k$ losses $\phi_n^k$ is learning rate dependent for GPT-2 trained with  Muon. \textbf{Left:} Top-$k$ losses $\phi_n^k$ for $\mathrm{LR} = 0.001$. The profile looks similar to the one observed for Muon on the Llama architecture in Figure \ref{fig:muon_topk_profile} since top-$k$ invariance only holds for small $k$ and the descent is slow especially for large $n$. \textbf{Right:} Top-$k$ losses $\phi_n^k$ for $\mathrm{LR} = 0.012$. The profile looks similar to those observed from the Adam optimizer (see Figures \ref{fig:adam_topk_profile} and \ref{fig:gpt_adam_topk_profile}) since the descent is fast, there is approximate top-$k$ invariance, and the tail flattens out.}
+    \vspace{1.5mm}\label{fig:ema_muon_lr_multiple_topk_profile}
+\end{figure}
+
+\newpage
+\subsection{CIFAR-10 MLP SGD}\label{app:mlp_sgd}
+We also probe the generality of our observations to a different dataset, optimizer, and architecture: CIFAR-10 training using SGD on a 2-layer MLP with ReLU activation and no biases. 
+
+\paragraph{CIFAR-10 Training Configuration} Below is the setup used for our CIFAR-10 experiment.
+\begin{table}[ht]
+\centering
+\small
+% increase row height
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Dataset}       & CIFAR-10                                      \\ 
+\addlinespace
+\textbf{Epochs}        & 100                                                   \\ 
+\addlinespace
+\textbf{Layers} & 2                                                   \\ 
+\addlinespace
+\textbf{Optimizer}     & Momentum SGD ($\beta=0.9$)\\
+
+\addlinespace
+\textbf{Batch Size} & 512 \\ 
+\addlinespace
+\textbf{LR Schedule}   & WSD with 4\% linear warmup \& 20\% cooldown         \\ 
+\addlinespace
+\textbf{Data Augmentation} & Mixup, Random Resized Cropping\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We use the same EMA warmup and discretization schedule as detailed in Appendix \ref{app:llama_exps}. We use our largest width $n_{\max} = 8192$ as the infinite-width proxy for computing $\hat{\bhptrunc}(n)$ using Algorithm \ref{alg:compute-hptrunc-all}.
+
+\paragraph{LR Grid Search}
+\begin{itemize}[nosep,leftmargin=*]
+  \item \(\displaystyle \mathrm{LR} \in \{1.0,\,1.4,\,2.0,\,2.8,\,4.0,\,4.8,\,5.7,\,6.7,\,8.0\}\times10^{-3}\)
+
+  \vspace{2mm}
+  
+  \item \(n \in \{128,\,256,\,512,\,1024,\,2048,\,4096,\,8192\}\)
+\end{itemize}
+
+In the right panel of Figure \ref{fig:sgd_kvec} we see that the majority of the loss decrease occurs in the first few components, and in the left panel we see that the computed values of $\hat{\hptrunc}(n)$ are much smaller than the width $n$. When we apply our decomposition using the computed values of $\hat{\hptrunc}(n)$ in Figures \ref{fig:sgd_top_k_across_widths} and \ref{fig:sgd_resids_across_widths}, we see the same qualitative picture holds as in the transformer Adam experiments (for example see Figures \ref{fig:top_k_across_widths} and \ref{fig:resids_across_width} for Llama trained on WikiText-103).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\linewidth]{arxiv_figures/ema_sgd_lr_kvec.pdf}
+    \caption{\small Two-layer MLP trained on CIFAR-10 using SGD. \textbf{Left:} Computed values of $\hat{\hptrunc}(n)$, with ratios $k_n / n$ much smaller than in the language setting (see Figure~\ref{fig:adam_topk_profile}). \textbf{Right:} Top-$k$ losses $\phi_n^k$ descend with $k$ and flatten much more quickly than in Figure~\ref{fig:adam_topk_profile}, indicating a  more low-rank structure in this setting.}
+    \label{fig:sgd_kvec}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_sgd_lr_dynamic_k_perdim_topk_total_step_9695.pdf}
+    \caption{\small \textbf{Left:} Total loss curves $\phi_n$ across widths for the two-layer MLP trained with SGD. \textbf{Right:} Corresponding top-$\hptrunc_n$ losses $\phi_n^{\hptrunc_n}$ (blue dashed) and $\phi_\infty^{\hptrunc_n}$ (purple dashed), similar to Figure \ref{fig:top_k_across_widths}.}
+    \label{fig:sgd_top_k_across_widths}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{arxiv_figures/ema_sgd_lr_dynamic_k_perdim_residuals_step_9695.pdf}
+    \caption{\small Residual losses around the top-$\hptrunc_n$ minimizers for two-layer MLP trained with SGD, which are approximately flat relative to the curvature of the top-$\hptrunc_n$ loss, as in Figure \ref{fig:resids_across_width}.}
+    \label{fig:sgd_resids_across_widths}
+\end{figure}
+
+
+

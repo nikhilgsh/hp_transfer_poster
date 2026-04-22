@@ -1,0 +1,14 @@
+\section{Related Work}\label{app:related_work}
+
+\paragraph{Hyperparameter transfer.}
+The question of hyperparameter transfer has been recently popularized with the rise of very large scale training runs, particularly for LLMs. Various empirical works have studied such properties, starting from the $\mu$-transfer work~\cite{yang2022tensor}. Some recent work has started investigating theoretical principles behind transfer, such as fast convergence of Hessian eigenvalues~\cite{noci2024super}. While such statistics display fast convergence with width, this remains valid for different learning rates, which makes the mechanisms for learning rate selection and transfer still unclear. \TODO{add Lechao paper}
+
+\paragraph{Optimization trajectories.}
+Our loss decomposition strategy relies on a smoothed trajectory that allows us to approximate the loss via local linearizations. The need for smoothing is related to the edge of stability literature~\cite[e.g.,][]{cohen2021gradient}, which shows that neural network training typically displays highly oscillatory trajectories which would not be amenable to such linearization. Our EMA-based smoothing provides an ``effective'' trajectory of the loss where oscillations are removed (or at least strongly attenuated), which relates to recent work~\cite{cohen2024understanding} characterizing the effective behavior of optimization in the presence of oscillations, yet at much lower computational cost.
+Our use of spectral decompositions of the gradient updates relates to recent optimization methods whose updates rely on such decompositions~\cite{gupta2018shampoo,zhao2024galore,vyas2024soap,jordan2024muon}, although we do not use these for optimization, but rather to decompose trajectories.
+
+% \paragraph{Decompositions in DL optimization.}
+
+\paragraph{Low-dimensional optimization dynamics.}
+Our fast transfer hypothesis relies on the presence of low-dimensional structure in the optimization trajectory. The presence of such structure in neural network optimization has been studied in various theoretical settings, such as the learning of single-index and multi-index models \cite{abbe2022merged,damian2022neural,bietti2023learning,mousavi2023neural,ba2023learning,berthier2024learning,mahankali2024beyond,dandi2024benefits,lee2024neural}, where gradient-based feature learning ``localizes'' the parameters into low-dimensional subspaces.
+Recent works have also shown that SGD induces a spiked (signal-plus-noise) eigenstructure in the conjugate kernel \cite{ba2022high,moniri2023theory,wang2024nonlinear,dandi2024random} or the Hessian \cite{arous2023high,arous2025local} of the neural network, where the spikes contain information of the low-dimensional target function. 

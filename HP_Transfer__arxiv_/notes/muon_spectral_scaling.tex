@@ -1,0 +1,128 @@
+\documentclass[11pt]{article}
+
+% --------- packages ---------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --------- listings style ---------
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black}\bfseries,
+  stringstyle=\color{green!40!black},
+  commentstyle=\color{gray!70},
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  breaklines=true,
+  tabsize=2
+}
+\lstset{style=py}
+
+% --------- theorem styles ---------
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+
+% --------- macros ---------
+\DeclareMathOperator{\Tr}{Tr}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\fro}{\mathrm{F}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\sr}{\mathrm{sr}}
+\newcommand{\sgn}{\mathrm{sign}}
+\newcommand{\msgn}{\mathrm{msign}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\RMS}{\mathrm{RMS}}
+\newcommand{\GD}{\mathrm{GD}}
+\newcommand{\Muon}{\mathrm{Muon}}
+\newcommand{\rank}{\mathrm{rank}}
+
+% =========================================================
+\begin{document}
+
+\section{Toy Transformer Regression}
+
+The teacher is a fixed linear map $T\in\mathbb{R}^{V\times V}$, while the model embeds one-hot tokens into $\mathbb{R}^n$, applies a trainable middle layer $W\in\mathbb{R}^{n\times n}$, then unembeds back to logits. We assume $V \geq n$.
+
+\subsection*{Model}
+Let a token $t\in\{1,\dots,V\}$ be represented by $x=e_t\in\mathbb{R}^V$ (one-hot). The distribution of $t$ will be according to a Zipf power law with $p_t := \Pr(t) \sim t^{-s}$. Let $E\in\mathbb{R}^{n\times V}$ be the embedding, $U^\top\in\mathbb{R}^{V\times n}$ the unembedding, and
+\[
+\hat y \;=\; U^\top W E x,\qquad y \;=\; T x,\qquad T\in\mathbb{R}^{V\times V}.
+\]
+Squared loss:
+\[
+L(W)\;=\;\frac{1}{2B}\sum_{b=1}^B \big\|U^\top W E x_b - T x_b\big\|_2^2.
+\]
+We will initialize $W = 0$ and only train $W$. The gradient is computed as,
+\begin{equation}\label{eq:Gx-decoupled}
+G \;=\; -\,\frac1B \sum_{b=1}^B U\, \big(T x_b\big)\, \big(E x_b\big)^\top
+\;=\; -\,\frac1B \sum_{t\in \mathcal{S}} \sum_{b:\,x_b=e_t} U\,\big(T e_t\big)\,\big(E e_t\big)^\top,
+\end{equation}
+where $\mathcal{S}\subseteq[V]$ is the set of distinct tokens seen in the batch. Define $\hat{p}_t$ to be normalized count of token $t$ in the batch, $y_t := Te_t$, and $h_t := Ee_t$. Then we can write the gradient as
+\[
+    G = -U \sum\limits_{t \in \mathcal{S}} \hat{p}_t y_t h_t^\top.
+\]
+
+\paragraph{Assumptions}
+We assume:
+\begin{enumerate}[left=1.3em, itemsep=2pt, topsep=2pt]
+\item \textbf{Teacher:} $T$ with columns $y_t \sim \cN(0, I_V)$.
+\item \textbf{Unembedding:} Entries $U_{ij} \sim \cN(0, 1/V)$ i.i.d
+\item \textbf{Embedding:} Columns $h_t \sim \cN(0, I_n / n)$ i.i.d
+\end{enumerate}
+
+\begin{proposition}[Gradient Rank]\label{prop:rankToy-decoupled}
+Let $D_B:=|\mathcal{S}|$ be the number of distinct tokens in the batch. Then
+\[
+\mathrm{rank}(G)\ = \min\{\,n,\ D_B\,\} \text{ almost surely}.
+\]
+\end{proposition}
+\begin{proof}
+Obvious.
+\end{proof}
+
+\begin{definition}[Feature Update RMS]
+We define the feature update RMS to be the RMS of the change in activations.
+\end{definition}
+We focus on the change in the output activations after applying $W$. After one step with update $\Delta W$ this means we compute $\RMS := \sqrt{\E_h \norm{\Delta W h}^2 / n}$. Under our model assumptions $\Sigma_h := \E_h hh^\top / n = I_n / n$ which means $\RMS = \norm{\Delta W}_F / \sqrt{n}$.
+\begin{theorem}[GD feature RMS]\label{thm:GD-decoupled}
+With $\Delta W_{\mathrm{GD}}=-\eta G$,
+\begin{align*}
+    \mathrm{RMS}_{\mathrm{GD}}^2 &= \eta^2 \norm{G}^2_F / n\\
+    &\approx \eta^2 \sum\limits_{t \in \cS} \hat{p}_t^2 \norm{U y_t}^2 / n \norm{h_t}^2 \\
+    &\approx \eta^2 \sum\limits_{t \in \cS} \hat{p}_t^2
+\end{align*}
+\end{theorem}
+By concentration arguments
+\[
+    G^\top G \approx \sum\limits_{t \in \cS} \hat{p}^2_t h_t h_t^\top.
+\]
+
+\begin{theorem}[Muon feature RMS]
+    With $\Delta W_{\Muon} = -\eta \cdot \msgn(G)$, 
+    \[
+        \RMS^2_{\Muon} = \eta^2 \frac{\rank(G)}{n} = \eta^2 \min\{1, D_B / n\} \approx \eta^2 \min\{1, K_s B^{1/s} / n\}.
+    \]
+\end{theorem}
+
+
+\end{document}
