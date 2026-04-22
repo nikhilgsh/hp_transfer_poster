@@ -1,0 +1,79 @@
+\documentclass[border=6pt]{standalone}
+
+\usepackage{amsmath,amssymb,bm}
+\usepackage{mathpazo}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+
+\newcommand{\bA}{\boldsymbol{A}}
+\newcommand{\bG}{\boldsymbol{G}}
+\newcommand{\bW}{\boldsymbol{W}}
+\newcommand{\bw}{\boldsymbol{w}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\R}{\mathbb{R}}
+
+% Color scheme (adjust to match your paper figures)
+\definecolor{totcol}{RGB}{0,140,0}   % green
+\definecolor{topcol}{RGB}{0,90,200}  % blue
+\definecolor{rescol}{RGB}{200,40,40} % red
+\newcommand{\tot}[1]{\textcolor{totcol}{#1}}
+\newcommand{\topk}[1]{\textcolor{topcol}{#1}}
+\newcommand{\res}[1]{\textcolor{rescol}{#1}}
+
+\begin{document}
+\begin{minipage}{0.92\linewidth}
+
+\small
+Matrix parameter $\bW \in \R^{m \times n}$, gradient $\bG \in \R^{m \times n}$, and update $\delta \bW \in \R^{m \times n}$.
+
+\vspace{4pt}
+
+\begin{tcolorbox}[
+  colback=gray!10,
+  colframe=gray!85,
+  boxrule=0.8pt,
+  arc=2pt,
+  left=6pt,right=6pt,top=4pt,bottom=4pt
+]
+\centering
+$\bA := \tfrac12\!\left(\bG^\top \delta \bW + \delta \bW^\top \bG\right)
+\quad \text{(alignment matrix)}$\\[2pt]
+{\small
+\quad \quad $|\lambda_1| \ge \cdots \ge |\lambda_n|
+\quad \quad \quad \quad \quad (\lambda_i\ \text{eigenvalues of}\ \bA)$
+}
+\end{tcolorbox}
+
+\vspace{2pt}
+\emph{Stepwise linearized loss change for parameter $\bW$:}
+\vspace{-2pt}
+\begin{align*}
+\delta \phi(\bW) := \langle \bG, \delta \bW\rangle = \mathrm{Tr}(\bA)
+&=
+\underbrace{\sum_{i=1}^{k}\lambda_i}_{\delta \phi^{k}(\bW)}
++
+\underbrace{\sum_{i=k+1}^{n}\lambda_i}_{\delta \phi^{-k}(\bW)} .
+\end{align*}
+
+\vspace{-4pt}
+\emph{Summing over layers $\ell$ and time steps $t$:}
+\vspace{-2pt}
+\begin{align*}
+\underbrace{\tot{\cL(\bw_T) - \cL(\bw_0)}\;\vphantom{\sum_{\ell=1}^{L}\sum_{t=0}^{T-1}}}_{\tot{\text{total loss}}}
+&\approx
+\underbrace{
+\topk{\displaystyle
+\sum_{\ell=1}^{L}\sum_{t=0}^{T-1}
+\delta \phi^{k}\!\left(\bW_t^{(\ell)}\right)}
+}_{\topk{\text{top-$k$ loss}}}
++
+\underbrace{
+\res{\displaystyle
+\sum_{\ell=1}^{L}\sum_{t=0}^{T-1}
+\delta \phi^{-k}\!\left(\bW_t^{(\ell)}\right)}
+}_{\res{\text{residual loss}}}.
+\end{align*}
+
+
+\end{minipage}
+\end{document}

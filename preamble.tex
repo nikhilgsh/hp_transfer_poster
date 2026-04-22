@@ -1,0 +1,75 @@
+% ======================================================================
+% Preamble for the ICLR 2026 poster.
+% Colors copied from HP_Transfer__slides_/main.tex:142-185.
+% Highlight-box macros copied from HP_Transfer__slides_/main.tex:249-283.
+% ======================================================================
+
+\usepackage{xcolor}
+
+% matplotlib defaults
+\definecolor{C0}{HTML}{1f77b4}
+\definecolor{C1}{HTML}{ff7f0e}
+
+% Vector colors
+\definecolor{tangocolorvectorred}{HTML}{E40086}
+\definecolor{tangocolorvectorblue}{HTML}{014171}
+\definecolor{tangocolorvectorpurple}{HTML}{861e80}
+\definecolor{tangocolorvectorlightblue}{HTML}{4C6379}
+\definecolor{tangocolorvectordarkblue}{HTML}{07223E}
+
+% NYU & Flatiron
+\definecolor{FlatironOrange2}{HTML}{f5862d}
+
+% tango plum
+\definecolor{tangocolordarkplum}{HTML}{5C3566}
+\definecolor{tangocolormediumplum}{HTML}{75507B}
+\definecolor{tangocolorlightplum}{HTML}{AD7FA8}
+
+% scarlet red
+\definecolor{tangocolordarkscarletred}{HTML}{A40000}
+\definecolor{tangocolormediumscarletred}{HTML}{CC0000}
+\definecolor{tangocolorlightscarletred}{HTML}{EF2929}
+
+% aluminium
+\definecolor{tangocolordarkaluminium}{HTML}{BABDB6}
+\definecolor{tangocolormediumaluminium}{HTML}{D3D3D3}
+\definecolor{tangocolorlightaluminium}{HTML}{FFFFFF}
+
+% gray
+\definecolor{tangocolorlightgray}{HTML}{888A85}
+
+% purple
+\definecolor{posterpurple}{HTML}{8B1C8B}
+\definecolor{posterdarkpurple}{HTML}{550055}
+\definecolor{posterlightpurple}{HTML}{FBF5FF}
+
+% ======================================================================
+% Highlight boxes: \redbox, \bluebox, \tealbox, \orangebox
+% ======================================================================
+\usepackage{tcolorbox}
+\makeatletter
+\newcommand{\redbox}[1]{%
+  \begin{tcbox}[on line,
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=red!15,colback=red!15, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\newcommand{\bluebox}[1]{%
+  \begin{tcbox}[on line,
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=blue!15,colback=blue!15, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\newcommand{\tealbox}[1]{%
+  \begin{tcbox}[on line,
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=teal!15,colback=teal!15, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\newcommand{\orangebox}[1]{%
+  \begin{tcbox}[on line,
+        boxsep=3.6pt, left=-1.5pt,right=-1.5pt,top=-0.6pt,bottom=-0.6pt,
+        colframe=orange!14,colback=orange!14, arc=1pt]{#1}\!\!\!
+  \end{tcbox}
+}
+\makeatother
