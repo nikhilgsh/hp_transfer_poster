@@ -84,70 +84,107 @@
       % ---- Panel A ----
       \panelhead{Introduction to $\mu$-Transfer}
 
-      {\Large Hyperparameter tuning is \textbf{brutally expensive} at scale. The \textbf{Maximal Update Parameterization ($\mu$P)} offers a cheap alternative: tune on a small proxy model, then \emph{transfer} the HPs to a large run. \emph{But when does this actually work --- and why?}}
+      {\Large $\mu$P lets you \textbf{tune a small proxy} and \emph{transfer} HPs to a large run. \emph{When does this work --- and why?}}
 
       \vspace{0.4em}
-      \begin{center}
-        \includegraphics[width=0.92\linewidth, height=14cm, keepaspectratio]{mu_transfer1.png}\\[0.3em]
-        {\large\itshape Standard parameterization (left): the optimal HP \emph{shifts} with width. $\mu$P (right): the optimum is \emph{stable} --- so small-model tuning transfers.}
-      \end{center}
+      \begin{columns}[c, onlytextwidth]
+        \begin{column}{0.36\linewidth}\centering
+          \includegraphics[width=\linewidth, height=12cm, keepaspectratio]{mu_transfer2.png}\\[0.3em]
+          {\large\itshape \textbf{Shrink} to a small proxy, \textbf{tune} cheaply, \textbf{transfer} HPs to the big run.}
+        \end{column}
+        \begin{column}{0.62\linewidth}\centering
+          \includegraphics[width=\linewidth, height=12cm, keepaspectratio]{mu_transfer1.png}\\[0.3em]
+          {\large\itshape Standard parameterization (left): optimum \emph{shifts} with width. $\mu$P (right): optimum \emph{stable}.}
+        \end{column}
+      \end{columns}
 
       \vspace{0.5em}
 
       % ---- Panel B ----
       \panelhead{Fast transfer}
 
-      {\Large What does it mean for transfer to ``work''? $\mu$P guarantees optimal HPs have a width-independent limit but says \emph{nothing about rates}. At width $n$ we track three gaps --- and one geometric fact:}
+      {\Large $\mu$P fixes optimal HPs in the width limit but says \emph{nothing about rates}. Three gaps at width $n$:}
 
-      \vspace{0.4em}
+      \vspace{0.5em}
       \begin{columns}[T, onlytextwidth]
-        \begin{column}{0.245\linewidth}\centering
-          \includegraphics[width=\linewidth, height=11cm, keepaspectratio]{a_n.png}\\[0.2em]
-          \textbf{\normalsize Loss gap $a_n$}\\ {\footnotesize finite vs.\ infinite width}
+        \begin{column}{0.24\linewidth}\centering
+          \includegraphics[width=\linewidth, height=8cm, keepaspectratio]{a_n.png}\\[0.3em]
+          \textbf{\large Loss gap $a_n$}\\ {\normalsize finite vs.\ $\infty$ width}
         \end{column}
-        \begin{column}{0.245\linewidth}\centering
-          \includegraphics[width=\linewidth, height=11cm, keepaspectratio]{b_n.png}\\[0.2em]
-          \textbf{\normalsize HP gap $b_n$}\\ {\footnotesize how far apart the best HPs are}
+        \begin{column}{0.24\linewidth}\centering
+          \includegraphics[width=\linewidth, height=8cm, keepaspectratio]{b_n.png}\\[0.3em]
+          \textbf{\large HP gap $b_n$}\\ {\normalsize distance between best HPs}
         \end{column}
-        \begin{column}{0.245\linewidth}\centering
-          \includegraphics[width=\linewidth, height=11cm, keepaspectratio]{c_n.png}\\[0.2em]
-          \textbf{\normalsize Transfer cost $c_n$}\\ {\footnotesize loss paid for using the wrong HP}
+        \begin{column}{0.24\linewidth}\centering
+          \includegraphics[width=\linewidth, height=8cm, keepaspectratio]{c_n.png}\\[0.3em]
+          \textbf{\large Transfer cost $c_n$}\\ {\normalsize loss paid for wrong HP}
         \end{column}
-        \begin{column}{0.245\linewidth}\centering
-          \resizebox{!}{11cm}{%
-          \begin{tikzpicture}
-            \draw[->, gray, thick] (-0.2,0) -- (5.2,0) node[right, black]{\Large $\eta$};
-            \draw[->, gray, thick] (0,-0.2) -- (0,3.4) node[above, black]{\Large $\phi$};
-            \draw[ultra thick, tangocolorvectorblue, domain=0.4:4.6, smooth, variable=\x]
-              plot ({\x}, {0.35*(\x - 2.5)*(\x - 2.5) + 0.35});
-            \filldraw[black] (2.5, 0.35) circle (4pt);
-            \node[below=4pt] at (2.5, 0.35) {\large $\eta^\star$};
-            \filldraw[black] (3.7, 0.85) circle (4pt);
-            \draw[<->, tangocolormediumscarletred, ultra thick] (2.5, -0.55) -- (3.7, -0.55);
-            \node[tangocolormediumscarletred, below] at (3.1, -0.55) {\large $\varepsilon$};
-            \draw[<->, tangocolormediumscarletred, ultra thick] (4.4, 0.35) -- (4.4, 0.85);
-            \node[tangocolormediumscarletred, right] at (4.4, 0.6) {\large $\propto \varepsilon^2$};
-          \end{tikzpicture}}\\[0.2em]
-          \textbf{\normalsize Strongly-convex min}\\ {\footnotesize forces $b_n = \mathcal{O}(\sqrt{a_n})$}
+        \begin{column}{0.24\linewidth}\centering
+          \begin{tikzpicture}[scale=1.4]
+            \useasboundingbox (-1.0, -1.15) rectangle (6.2, 4.1);
+            % axes
+            \draw[->, gray, semithick] (-0.3, 0) -- (5.9, 0) node[right, black]{\large $\eta$};
+            \draw[->, gray, semithick] (0, -0.3) -- (0, 3.8) node[above, black]{\large $\phi$};
+            % parabola
+            \draw[ultra thick, tangocolorvectorblue, domain=0.5:5.0, smooth, variable=\x]
+              plot ({\x}, {0.5*(\x - 2.75)*(\x - 2.75)});
+            % η* on x-axis
+            \filldraw[black] (2.75, 0) circle (3pt);
+            \node[black, below=4pt] at (2.75, 0) {\large $\eta^\star$};
+            % η* + ε on x-axis (no label; bracket below carries the info)
+            \filldraw[black] (4.25, 0) circle (3pt);
+            % point on parabola at (η*+ε, φ(η*+ε)); y = 0.5*1.5^2 = 1.125
+            \filldraw[tangocolorvectorblue] (4.25, 1.125) circle (3pt);
+            % dashed guides
+            \draw[dashed, semithick, tangocolormediumscarletred] (4.25, 0) -- (4.25, 1.125);
+            \draw[dashed, semithick, tangocolormediumscarletred] (0, 1.125) -- (4.25, 1.125);
+            % ε bracket below x-axis, offset so it does not collide with η* label
+            \draw[<->, tangocolormediumscarletred, thick] (2.75, -0.7) -- (4.25, -0.7);
+            \node[tangocolormediumscarletred, below=-1pt] at (3.5, -0.7) {\large $\varepsilon$};
+            % ε² bracket to the LEFT of y-axis (outside the plot)
+            \draw[<->, tangocolormediumscarletred, thick] (-0.35, 0) -- (-0.35, 1.125);
+            \node[tangocolormediumscarletred, left=0pt] at (-0.4, 0.56) {\large $\varepsilon^2$};
+          \end{tikzpicture}\\[0.3em]
+          \textbf{\large Strongly-convex min}\\ {\normalsize loss $\propto\varepsilon^2$ in HP error}
         \end{column}
       \end{columns}
 
       \vspace{0.5em}
+      {\Large \textbf{Fast transfer:} $b_n$ shrinks \emph{strictly faster} than $\sqrt{a_n}$ --- beating the $\mu$P baseline $b_n = \mathcal{O}(\sqrt{a_n})$ set by strong convexity.}
 
-      {\Large \textbf{Fast transfer}: $b_n$ shrinks \emph{strictly faster} than $\sqrt{a_n}$ --- beating the baseline. We prove this is \emph{exactly} when transfer is \textbf{useful} (asymptotically more compute-efficient than direct tuning). And the baseline is not automatic: a two-layer ReLU under $\mu$P matches it \emph{exactly}, so transfer only breaks even there.}
+      \vspace{0.5em}
 
-      \vspace{0.4em}
+      % ---- Panel C ----
+      \panelhead{Useful transfer theorem}
+
+      {\Large \textbf{Direct:} grid-search at the target width. \textbf{Transfer:} grid-search at small $n$, train once at target. Which wins?}
+
+      \vspace{0.7em}
       \begin{center}
-        \bluebox{\parbox{0.95\linewidth}{\large \textbf{Useful-transfer theorem.} Let $a_n \sim n^{-\alpha}$, $b_n \sim n^{-\beta}$ near a strongly-convex minimum. Then transferring HPs from width $n$ to $\infty$ is \emph{asymptotically cheaper} than tuning directly at width $n$ iff
-        \[ \beta > \alpha/2, \qquad \text{equivalently} \qquad b_n = o(\sqrt{a_n}). \]
-        \textbf{Why:} strong convexity forces the transfer cost $c_n \propto b_n^2$, while direct tuning pays $\sim a_n$. So transfer wins exactly when $b_n^2 = o(a_n)$ --- \emph{the HP gap must shrink faster than $\sqrt{\text{loss gap}}$}.}}
+        \bluebox{\parbox{0.96\linewidth}{\centering \Large \textbf{Theorem.} Suppose the gaps decay as power laws, $a_n \sim n^{-\alpha}$ and $b_n \sim n^{-\beta}$, near a strongly-convex minimum of the infinite-width loss. Then
+        \[ \text{\textbf{transfer} beats \textbf{direct} asymptotically}\quad\iff\quad \beta > \tfrac{\alpha}{2}, \quad\text{i.e.,}\quad b_n = o\!\bigl(\sqrt{a_n}\bigr). \]
+        \vspace{-0.8em}
+        {\normalsize\upshape (same condition as \emph{fast transfer}).}}}
       \end{center}
 
-      \vspace{0.3em}
-      \begin{center}
-        \includegraphics[width=0.88\linewidth, height=13cm, keepaspectratio]{slow.png}\\[0.3em]
-        {\large\itshape Two-layer ReLU $+\ \mu$P: $b_n \propto n^{-0.39} \approx \sqrt{a_n}$ --- baseline \emph{exactly} achieved, so fast transfer is not universal under $\mu$P. It must come from additional structure.}
-      \end{center}
+      \vspace{0.5em}
+
+      {\Large \textbf{Why:} transfer pays $c_n \propto b_n^2$ (HP error); direct pays $\sim a_n$ (loss gap). Transfer wins iff $b_n^2 = o(a_n)$.}
+
+      \vspace{0.2em}
+      \begin{center}{\large\itshape Two synthetic testbeds: 2-layer ReLU learning a ball-indicator target (left); random-feature ridge regression in $d$ dimensions (right).}\end{center}
+
+      \vspace{0.2em}
+      \begin{columns}[c, onlytextwidth]
+        \begin{column}{0.57\linewidth}\centering
+          \includegraphics[width=\linewidth, height=9cm, keepaspectratio]{slow.png}\\[0.3em]
+          {\large\itshape \textbf{$\mu$P failure} --- HP gap decays like $b_n \propto n^{-0.39}\!\approx\!\sqrt{a_n}$. Only the baseline; transfer breaks even.}
+        \end{column}
+        \begin{column}{0.41\linewidth}\centering
+          \includegraphics[width=\linewidth, height=9cm, keepaspectratio]{RFF_rate.png}\\[0.3em]
+          {\large\itshape \textbf{Provable fast transfer} --- both $a_n, b_n\!\sim\!d/n$, so $b_n^2\!=\!o(a_n)$. Theorem's condition holds.}
+        \end{column}
+      \end{columns}
 
     \end{column}
 
@@ -164,13 +201,13 @@
 
       {\Large Intuition: optimal HPs should depend on network statistics that stabilize with width \emph{faster} than the loss itself. We decompose the stepwise linearized loss change via the eigenvalues of a gradient/update alignment matrix:}
 
-      \vspace{0.3em}
+      \vspace{0.4em}
       \begin{columns}[c, onlytextwidth]
         \begin{column}{0.58\linewidth}\centering
-          \includegraphics[width=\linewidth, height=13cm, keepaspectratio]{decomposition_equation.pdf}
+          \includegraphics[width=\linewidth, height=18cm, keepaspectratio]{decomposition_equation.pdf}
         \end{column}
         \begin{column}{0.42\linewidth}\centering
-          \includegraphics[width=\linewidth, height=10cm, keepaspectratio]{decomp.png}\\[0.3em]
+          \includegraphics[width=\linewidth, height=14cm, keepaspectratio]{decomp.png}\\[0.5em]
           {\large\itshape Cartoon: total loss $=$ (U-shaped, width-stable) top-$k$ $+$ (flat) residual.}
         \end{column}
       \end{columns}
@@ -178,30 +215,31 @@
       \vspace{0.4em}
 
       \begin{center}
-        \tealbox{\normalsize \textbf{Conjecture} (qualitative). For some $k$: \textbf{(1)} top-$k$ loss is locally strongly convex at its optimum; \textbf{(2)} \emph{top-$k$ invariance} --- $\phi^k_n \approx \phi^k_\infty$, $\nu^{k*}_n \approx \nu^{k*}_\infty$; \textbf{(3)} \emph{residual flatness} --- $\nu^{k*}_n \approx \nu^*_n$.}
+        \tealbox{\parbox{0.96\linewidth}{\normalsize \textbf{Conjecture.} For some $k$: \textbf{(1)} the top-$k$ loss is locally strongly convex at its optimum; \textbf{(2)} \emph{top-$k$ invariance} --- the top-$k$ loss and its optimal HP are approximately width-independent; \textbf{(3)} \emph{residual flatness} --- the residual loss is flat in HP, so it cannot move the optimum.}}
       \end{center}
 
-      \vspace{0.5em}
+      \vspace{0.7em}
 
       % ---- Panel D ----
       \panelhead{Experiments}
 
-      {\Large We measure the decomposition on an actual LLM training run. The same three-way split shown in the cartoon appears directly in the data: top-$k$ curves overlap across widths and share the total's optimum, while residuals are flat in the LR.}
+      {\Large We measure the decomposition on a real LLM training run, comparing the proxy width $n\!=\!128$ against the $\infty$-proxy $n\!=\!2048$ --- the same pair as in the cartoon.}
 
-      \begin{center}{\large\itshape Setup: 4-layer LLaMA $\cdot$ WikiText-103 $\cdot$ Adam $\cdot$ warmup--stable--decay LR $\cdot$ widths $128$--$2048$ ($n=2048$ as $\infty$-proxy).}\end{center}
+      \begin{center}{\large\itshape Setup: 4-layer LLaMA $\cdot$ WikiText-103 $\cdot$ Adam $\cdot$ warmup--stable--decay LR.}\end{center}
 
+      \vspace{0.3em}
       \begin{center}
-        \includegraphics[width=\linewidth, height=12cm, keepaspectratio]{topk-residual.png}
+        \includegraphics[width=\linewidth, height=14cm, keepaspectratio]{ema_adam_lr_dynamic_k_perdim_pair_3panel_step_7185.pdf}
       \end{center}
       \begin{columns}[T, onlytextwidth]
-        \begin{column}{0.33\linewidth}\centering
-          \textbf{\normalsize Total $\phi_n$}\\ {\footnotesize U-shaped; optima shift with width.}
+        \begin{column}{0.32\linewidth}\centering
+          \textbf{\normalsize Total}\\ {\footnotesize The optimum \emph{shifts} between the two widths --- the $\mu$-transfer baseline.}
         \end{column}
-        \begin{column}{0.34\linewidth}\centering
-          \textbf{\normalsize Top-$k$ $\phi_n^{k_n}$}\\ {\footnotesize Overlap across widths; \emph{same} optimum as total.}
+        \begin{column}{0.32\linewidth}\centering
+          \textbf{\normalsize Top-$k$}\\ {\footnotesize Proxy top-$k$ at $n=128$ \emph{overlaps} the infinite-width top-$k$ and shares its optimum.}
         \end{column}
-        \begin{column}{0.33\linewidth}\centering
-          \textbf{\normalsize Residual $\phi_n^{-k_n}$}\\ {\footnotesize Flat in LR; can't move the optimum.}
+        \begin{column}{0.32\linewidth}\centering
+          \textbf{\normalsize Residual}\\ {\footnotesize Flat in the learning rate at both widths --- cannot move the optimum.}
         \end{column}
       \end{columns}
 
@@ -210,12 +248,12 @@
         \tealbox{\normalsize All three conjecture pieces (LSC, invariance, flatness) \textbf{verified} on a real LLM run.}
       \end{center}
 
-      \vspace{0.3em}
+      \vspace{0.6em}
       {\large\itshape In the paper: provable fast transfer for RF ridge regression; transfer behavior of Muon \& Dion; a data-centric viewpoint of the top-$k$ loss; a $\mu$P failure case. arXiv:2512.22768.}
 
-      \vspace{0.5em}
+      \vspace*{\fill}
       \begin{center}
-        \orangebox{\parbox{0.95\linewidth}{\large \centering \textbf{Takeaway.} $\mu$P alone only guarantees HP transfer --- not \emph{useful} transfer. What makes tuning a small proxy worthwhile is a \emph{low-rank structure in training}: a small, width-stable top-$k$ component carries the HP signal, while the rest is flat.}}
+        \orangebox{\parbox{0.95\linewidth}{\Large \centering \textbf{Takeaway.} $\mu$P alone only guarantees HP transfer --- not \emph{useful} transfer. What makes tuning a small proxy worthwhile is a \emph{low-rank structure in training}: a small, width-stable top-$k$ component carries the HP signal, while the rest is flat.}}
       \end{center}
 
     \end{column}
